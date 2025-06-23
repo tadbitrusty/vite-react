@@ -1,0 +1,390 @@
+{
+  "name": "ResumeSniper - AI Resume Optimization",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "resume-upload",
+        "options": {}
+      },
+      "id": "webhook-start",
+      "name": "Resume Upload Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [220, 300],
+      "webhookId": "resume-upload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.email}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json.resumeFile}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json.jobDescription}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "validate-input",
+      "name": "Validate Input Data",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "users",
+        "columns": "email, free_resume_used, created_at",
+        "additionalFields": {
+          "upsert": true
+        }
+      },
+      "id": "check-free-trial",
+      "name": "Check Free Trial Usage",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [660, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase ResumeSniper"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.free_resume_used}}",
+              "value2": false
+            }
+          ]
+        }
+      },
+      "id": "check-eligibility",
+      "name": "Check Free Trial Eligibility",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "model": "claude-3-5-sonnet-20241022",
+        "messages": {
+          "message": [
+            {
+              "role": "user",
+              "content": "You are a master resume writer specializing in ATS optimization. \n\nINSTRUCTIONS:\n- Do NOT lie or over-embellish\n- Create an ATS-optimized resume that matches the job requirements\n- Use keywords from the job description naturally\n- Maintain professional formatting\n- Keep the same contact information\n- Focus on relevant experience for this specific job\n\nORIGINAL RESUME:\n{{$json.resumeContent}}\n\nJOB DESCRIPTION:\n{{$json.jobDescription}}\n\nCreate an optimized resume that will get past ATS systems and land an interview:"
+            }
+          ]
+        }
+      },
+      "id": "claude-primary",
+      "name": "Claude 3.5 Sonnet - Primary AI",
+      "type": "n8n-nodes-base.anthropic",
+      "typeVersion": 1,
+      "position": [1100, 200],
+      "credentials": {
+        "anthropicApi": {
+          "id": "2",
+          "name": "Claude API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "message": [
+            {
+              "role": "user",
+              "content": "You are a master resume writer specializing in ATS optimization. \n\nINSTRUCTIONS:\n- Do NOT lie or over-embellish\n- Create an ATS-optimized resume that matches the job requirements\n- Use keywords from the job description naturally\n- Maintain professional formatting\n- Keep the same contact information\n- Focus on relevant experience for this specific job\n\nORIGINAL RESUME:\n{{$json.resumeContent}}\n\nJOB DESCRIPTION:\n{{$json.jobDescription}}\n\nCreate an optimized resume that will get past ATS systems and land an interview:"
+            }
+          ]
+        }
+      },
+      "id": "openai-backup",
+      "name": "OpenAI GPT-4 - Backup AI",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1100, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "3",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3-8b-8192",
+        "messages": {
+          "message": [
+            {
+              "role": "user",
+              "content": "You are a master resume writer specializing in ATS optimization. \n\nINSTRUCTIONS:\n- Do NOT lie or over-embellish\n- Create an ATS-optimized resume that matches the job requirements\n- Use keywords from the job description naturally\n- Maintain professional formatting\n- Keep the same contact information\n- Focus on relevant experience for this specific job\n\nORIGINAL RESUME:\n{{$json.resumeContent}}\n\nJOB DESCRIPTION:\n{{$json.jobDescription}}\n\nCreate an optimized resume that will get past ATS systems and land an interview:"
+            }
+          ]
+        }
+      },
+      "id": "groq-tertiary",
+      "name": "Groq Llama3 - Tertiary AI",
+      "type": "n8n-nodes-base.groq",
+      "typeVersion": 1,
+      "position": [1100, 400],
+      "credentials": {
+        "groqApi": {
+          "id": "4",
+          "name": "Groq API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "subject": "Your Optimized Resume from ResumeSniper",
+        "message": "Hello!\n\nYour ATS-optimized resume is ready! This resume has been tailored specifically for the job you're applying to and optimized to get past Applicant Tracking Systems.\n\n**Important Reminders:**\n- This resume is AI-generated - please review and edit as needed\n- AI can make mistakes - you know your experience best\n- Always proofread before submitting to employers\n\n**Next Steps:**\n1. Download and review your optimized resume\n2. Make any necessary personal edits\n3. Apply with confidence!\n\nIf this tool helped you land an interview, we'd love to hear about it!\n\nBest of luck in your job search,\nThe ResumeSniper Team\n\n---\nBuilt by a Navy veteran who was tired of ATS systems rejecting qualified candidates.\n\nP.S. - Please rate our service: [5 STARS] [4 STARS] [3 STARS] [2 STARS] [1 STAR]",
+        "toEmail": "={{$json.email}}",
+        "options": {
+          "attachments": "optimized_resume.txt"
+        }
+      },
+      "id": "send-resume-email",
+      "name": "Send Optimized Resume Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [1320, 300],
+      "credentials": {
+        "smtp": {
+          "id": "5",
+          "name": "SMTP Email"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": "users",
+        "updateKey": "email",
+        "columns": "free_resume_used=true, last_resume_date=now()"
+      },
+      "id": "update-usage",
+      "name": "Update Free Trial Usage",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1540, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase ResumeSniper"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\": true, \"message\": \"Your optimized resume has been sent to {{$json.email}}!\"}",
+        "options": {}
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1760, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\": false, \"message\": \"Missing required fields: email, resume, or job description\"}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "validation-error",
+      "name": "Validation Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [660, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\": false, \"message\": \"You've already used your free resume. Check out our paid plans!\", \"redirect\": \"/pricing\"}",
+        "options": {
+          "responseCode": 402
+        }
+      },
+      "id": "trial-used-response",
+      "name": "Free Trial Already Used",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1100, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract resume content from file\nconst resumeFile = items[0].json.resumeFile;\n\n// In a real implementation, you'd extract text from PDF/DOCX\n// For now, assuming text content is provided\nconst resumeContent = items[0].json.resumeContent || \"Resume content would be extracted here\";\n\nreturn {\n  json: {\n    ...items[0].json,\n    resumeContent: resumeContent,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "process-file",
+      "name": "Process Resume File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [880, 200]
+    }
+  ],
+  "connections": {
+    "Resume Upload Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Input Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input Data": {
+      "main": [
+        [
+          {
+            "node": "Check Free Trial Usage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Free Trial Usage": {
+      "main": [
+        [
+          {
+            "node": "Check Free Trial Eligibility",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Free Trial Eligibility": {
+      "main": [
+        [
+          {
+            "node": "Process Resume File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Free Trial Already Used",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Resume File": {
+      "main": [
+        [
+          {
+            "node": "Claude 3.5 Sonnet - Primary AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude 3.5 Sonnet - Primary AI": {
+      "main": [
+        [
+          {
+            "node": "Send Optimized Resume Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OpenAI GPT-4 - Backup AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4 - Backup AI": {
+      "main": [
+        [
+          {
+            "node": "Send Optimized Resume Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Groq Llama3 - Tertiary AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Llama3 - Tertiary AI": {
+      "main": [
+        [
+          {
+            "node": "Send Optimized Resume Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Optimized Resume Email": {
+      "main": [
+        [
+          {
+            "node": "Update Free Trial Usage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Free Trial Usage": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-06-19T18:30:00.000Z",
+  "versionId": "1"
+}

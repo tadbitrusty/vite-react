@@ -1,0 +1,147 @@
+{
+  "name": "ResumeSniper v2 - Enhanced Production Line",
+  "meta": {
+    "templateCreatedBy": "Claude Code Power User Training",
+    "description": "Enhanced version of working ResumeSniper workflow with additional quality control and business logic",
+    "preserves_api_keys": true,
+    "safe_upgrade": true
+  },
+  "enhancements": {
+    "quality_control": [
+      "File size validation (max 10MB)",
+      "Content quality scoring",
+      "Resume parsing validation",
+      "Output quality assessment"
+    ],
+    "business_logic": [
+      "Payment processing integration",
+      "Credit management system", 
+      "Usage analytics tracking",
+      "Customer feedback collection",
+      "Pricing tier management"
+    ],
+    "monitoring": [
+      "Processing time tracking",
+      "Cost per resume calculation",
+      "Success rate monitoring",
+      "AI provider performance metrics",
+      "Error rate tracking"
+    ],
+    "user_experience": [
+      "Progress updates to frontend",
+      "Better error messages",
+      "Processing status webhooks",
+      "Quality score feedback"
+    ]
+  },
+  "implementation_strategy": {
+    "phase_1": "Add quality control stations (non-breaking)",
+    "phase_2": "Add monitoring and analytics",
+    "phase_3": "Add payment processing",
+    "phase_4": "Add advanced business logic"
+  },
+  "new_nodes_to_add": [
+    {
+      "node_type": "function",
+      "name": "File Validation Station",
+      "purpose": "Validate file size, type, and content quality",
+      "position": "After webhook, before input validation",
+      "breaking_change": false
+    },
+    {
+      "node_type": "function", 
+      "name": "Content Quality Scorer",
+      "purpose": "Rate resume content quality before AI processing",
+      "position": "After input validation, before AI processing",
+      "breaking_change": false
+    },
+    {
+      "node_type": "function",
+      "name": "Processing Timer",
+      "purpose": "Track processing time and performance metrics",
+      "position": "Parallel to main flow",
+      "breaking_change": false
+    },
+    {
+      "node_type": "function",
+      "name": "Cost Calculator",
+      "purpose": "Calculate per-resume processing costs",
+      "position": "After AI processing",
+      "breaking_change": false
+    },
+    {
+      "node_type": "webhook",
+      "name": "Progress Update Webhook",
+      "purpose": "Send progress updates to frontend",
+      "position": "Multiple points in workflow",
+      "breaking_change": false
+    },
+    {
+      "node_type": "supabase",
+      "name": "Analytics Logger",
+      "purpose": "Log detailed usage analytics",
+      "position": "Parallel to main flow",
+      "breaking_change": false
+    },
+    {
+      "node_type": "if",
+      "name": "Payment Gate",
+      "purpose": "Route paid users vs free trial users",
+      "position": "After free trial check",
+      "breaking_change": false
+    },
+    {
+      "node_type": "stripe",
+      "name": "Payment Processor",
+      "purpose": "Handle paid resume processing",
+      "position": "For non-free users",
+      "breaking_change": false
+    },
+    {
+      "node_type": "function",
+      "name": "Output Quality Validator",
+      "purpose": "Validate AI output before sending",
+      "position": "After AI processing, before email",
+      "breaking_change": false
+    },
+    {
+      "node_type": "webhook",
+      "name": "Feedback Collector",
+      "purpose": "Collect user ratings and feedback",
+      "position": "Separate flow triggered by email links",
+      "breaking_change": false
+    }
+  ],
+  "safe_upgrade_instructions": {
+    "step_1": "Export current working workflow as backup",
+    "step_2": "Clone workflow to 'ResumeSniper-v2'",
+    "step_3": "Add nodes one at a time to v2",
+    "step_4": "Test each addition thoroughly",
+    "step_5": "Run parallel testing (v1 and v2)",
+    "step_6": "Gradually migrate traffic when confident"
+  },
+  "api_key_preservation": {
+    "anthropic_api": "Reuse existing credential ID: 2",
+    "openai_api": "Reuse existing credential ID: 3", 
+    "groq_api": "Reuse existing credential ID: 4",
+    "supabase_api": "Reuse existing credential ID: 1",
+    "smtp_email": "Reuse existing credential ID: 5",
+    "new_credentials_needed": [
+      "Stripe API (for payment processing)",
+      "Analytics service (optional)"
+    ]
+  },
+  "success_metrics": {
+    "processing_success_rate": ">98%",
+    "average_processing_time": "<60 seconds",
+    "cost_per_resume": "$0.30-0.50",
+    "user_satisfaction": ">4.5/5 stars",
+    "free_to_paid_conversion": ">15%"
+  },
+  "rollback_plan": {
+    "condition": "If anything breaks",
+    "action": "Immediately switch traffic back to v1",
+    "monitoring": "Watch success rates and error logs",
+    "timeline": "Can rollback within 5 minutes"
+  }
+}

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{FULL_NAME}} - Resume</title>
+    <style>
+        /* Entry Clean Template - $5.99 Tier
+           Modern design for entry-level professionals with clean aesthetics */
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            color: #2c3e50;
+            background: #ffffff;
+        }
+        
+        .resume-container {
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 0.75in;
+            box-sizing: border-box;
+        }
+        
+        /* Premium Header Design */
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .name {
+            font-size: 22pt;
+            font-weight: 300;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            letter-spacing: 1px;
+        }
+        
+        .contact-info {
+            font-size: 10pt;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+        
+        .contact-info a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        /* Modern Section Styles */
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 13pt;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #ecf0f1;
+            position: relative;
+        }
+        
+        .section-title::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: #3498db;
+        }
+        
+        /* Enhanced Experience Section */
+        .job-entry {
+            margin-bottom: 18px;
+            padding: 15px;
+            background: #fafbfc;
+            border-left: 4px solid #3498db;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .job-header {
+            margin-bottom: 8px;
+        }
+        
+        .job-title {
+            font-weight: 600;
+            font-size: 12pt;
+            color: #2c3e50;
+            display: inline;
+        }
+        
+        .job-dates {
+            float: right;
+            font-weight: 500;
+            color: #7f8c8d;
+            font-size: 10pt;
+        }
+        
+        .company-info {
+            font-weight: 500;
+            color: #3498db;
+            margin-bottom: 8px;
+        }
+        
+        .job-description ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .job-description li {
+            margin-bottom: 4px;
+            color: #34495e;
+        }
+        
+        /* Modern Education Section */
+        .education-entry {
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #f8f9ff;
+            border-radius: 6px;
+        }
+        
+        .degree-info {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        
+        .school-info {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        
+        /* Enhanced Skills Section */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .skill-category {
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ecf0f1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .skill-category-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #3498db;
+            font-size: 11pt;
+        }
+        
+        .skill-list {
+            color: #34495e;
+            font-size: 10pt;
+        }
+        
+        /* Premium Touches */
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        
+        /* Subtle animations for digital viewing */
+        @media screen {
+            .job-entry:hover {
+                transform: translateX(2px);
+                transition: transform 0.2s ease;
+            }
+            
+            .skill-category:hover {
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                transition: box-shadow 0.2s ease;
+            }
+        }
+        
+        /* Print optimization */
+        @media print {
+            body { 
+                font-size: 10pt;
+                line-height: 1.4;
+            }
+            .resume-container {
+                padding: 0.5in;
+            }
+            .job-entry {
+                background: #ffffff;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="resume-container">
+        <!-- Premium Header -->
+        <header class="header">
+            <h1 class="name">{{FULL_NAME}}</h1>
+            <div class="contact-info">
+                {{EMAIL}} | {{PHONE}} | {{LOCATION}}
+                {{#if LINKEDIN}}| <a href="{{LINKEDIN}}">LinkedIn Profile</a>{{/if}}
+            </div>
+        </header>
+
+        <!-- Professional Summary -->
+        {{#if SUMMARY}}
+        <section class="section">
+            <h2 class="section-title">Professional Summary</h2>
+            <p style="color: #34495e; line-height: 1.6;">{{SUMMARY}}</p>
+        </section>
+        {{/if}}
+
+        <!-- Professional Experience -->
+        <section class="section">
+            <h2 class="section-title">Professional Experience</h2>
+            {{EXPERIENCE}}
+        </section>
+
+        <!-- Education -->
+        <section class="section">
+            <h2 class="section-title">Education</h2>
+            {{EDUCATION}}
+        </section>
+
+        <!-- Skills -->
+        {{#if SKILLS}}
+        <section class="section">
+            <h2 class="section-title">Core Competencies</h2>
+            <div class="skills-grid">
+                {{SKILLS}}
+            </div>
+        </section>
+        {{/if}}
+
+        <!-- Certifications -->
+        {{#if CERTIFICATIONS}}
+        <section class="section">
+            <h2 class="section-title">Certifications & Achievements</h2>
+            {{CERTIFICATIONS}}
+        </section>
+        {{/if}}
+    </div>
+</body>
+</html>

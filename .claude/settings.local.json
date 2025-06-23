@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(split:*)",
+      "Bash(ls:*)",
+      "Bash(mv:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install)",
+      "Bash(pkill:*)",
+      "Bash(node:*)",
+      "Bash(npm --version)",
+      "Bash(kill:*)",
+      "Bash(chmod:*)",
+      "Bash(./start_logger.sh:*)",
+      "Bash(python3:*)",
+      "Bash(timeout:*)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run lint)",
+      "Bash(npm run build:*)",
+      "Bash(touch:*)",
+      "Bash(npm audit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(npm install:*)",
+      "Bash(vercel:*)"
+    ],
+    "deny": []
+  }
+}

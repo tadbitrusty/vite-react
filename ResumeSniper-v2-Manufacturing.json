@@ -1,0 +1,568 @@
+{
+  "name": "ResumeSniper",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "resume-upload",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "eefa21b6-13bb-4102-bc1c-368df4ddfd80",
+      "name": "Station 1: Input Receiving",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1380,
+        420
+      ],
+      "webhookId": "resume-upload"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\": true, \"message\": \"Processing started - you'll receive your optimized resume via email shortly\", \"processing_id\": \"{{$json.timestamp}}\"}",
+        "options": {}
+      },
+      "id": "20354f29-7b48-4925-ad58-9278c009d63a",
+      "name": "Immediate Customer Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -1100,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.email }}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{ $json.body.resumeContent }}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{ $json.body.jobDescription }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "a70586eb-9672-437f-9053-9f38aee1a106",
+      "name": "Station 2A: Input Validation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Station 3: Simple Whitelist Gateway\n  // Pass everything through, just add security info\n\n  const email = items[0].json.body.email.toLowerCase().trim();\n\n  // VIP users get infinite access\n  if (email === 'adamhoemberg@gmail.com') {\n    return [{\n      json: {\n        ...items[0].json.body,\n        email: email,\n        privilege_level: 'admin',\n        resumes_remaining: -1,\n        authorized: true,\n        route: 'vip_admin'\n      }\n    }];\n  }\n\n  if (email === 'jhoemberg75@gmail.com') {\n    return [{\n      json: {\n        ...items[0].json.body,\n        email: email,\n        privilege_level: 'tester',\n        resumes_remaining: -1,\n        authorized: true,\n        route: 'vip_tester'\n      }\n    }];\n  }\n\n  // Everyone else goes to database lookup\n  return [{\n    json: {\n      ...items[0].json.body,\n      email: email,\n      route: 'database_lookup',\n      needs_database_check: true\n    }\n  }];"
+      },
+      "id": "fd322cad-5456-4fc9-bfe0-28606b9deddd",
+      "name": "Station 3: Whitelist Security Gateway",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -580,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.route }}",
+              "value2": "database_lookup"
+            }
+          ]
+        }
+      },
+      "id": "f372813d-2327-4660-8aaa-562f7246b853",
+      "name": "Route Checker",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.email }}"
+            }
+          ]
+        }
+      },
+      "id": "c5a6bca4-9239-4c7b-90e4-882891a74d44",
+      "name": "Database User Lookup",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        260
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "09yc8ytHkLrcvGbA",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process database lookup results\nconst email = items[0].json.email;\nconst dbResults = items[0].json;\nconst timestamp = items[0].json.timestamp;\n\n// If user exists in database\nif (dbResults && dbResults.email) {\n  const authorized = dbResults.resumes_remaining > 0 || dbResults.resumes_remaining === -1;\n  \n  return [{\n    json: {\n      email: email,\n      privilege_level: dbResults.privilege_level || 'free',\n      resumes_remaining: dbResults.resumes_remaining || 0,\n      route: 'existing_user',\n      authorized: authorized,\n      timestamp: timestamp,\n      description: authorized ? 'Existing user - authorized' : 'Trial already used - payment required'\n    }\n  }];\n}\n\n// New user - create free trial\nreturn [{\n  json: {\n    email: email,\n    privilege_level: 'free',\n    resumes_remaining: 1,\n    route: 'new_user',\n    authorized: true,\n    timestamp: timestamp,\n    description: 'New user - free trial granted',\n    needs_user_creation: true\n  }\n}];"
+      },
+      "id": "07c8586b-9db7-4707-8138-94889ac8dd73",
+      "name": "User Status Processor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        100,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "users",
+        "dataToSend": "={\n  \"email\": \"{{ $json.email }}\",\n  \"privilege_level\": \"free\",\n  \"resumes_remaining\": 0,\n  \"resumes_used\": 1,\n  \"whitelist_code\": \"FREE_TRIAL\",\n  \"created_at\": \"{{ $json.timestamp }}\"\n}"
+      },
+      "id": "a59c4f23-7ed2-4c7f-b72d-06f77f005698",
+      "name": "Create New User",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        260,
+        260
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "09yc8ytHkLrcvGbA",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.authorized }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "467b687e-4feb-415d-83e8-35b97f64ca05",
+      "name": "Station 4: Authorization Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        500,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\": false, \"message\": \"{{ $json.description }}\", \"redirect\": \"/pricing\"}",
+        "options": {
+          "responseCode": 402
+        }
+      },
+      "id": "e4e6ed64-2716-48f3-87ed-5c8f47241cff",
+      "name": "Payment Required Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        700,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Station 5A: File Validation (Speed-Optimized)\n// Basic validation only - detailed analysis happens post-AI\n\nconst data = items[0].json;\nconst resumeContent = data.resumeContent;\nconst fileName = data.fileName || 'resume.txt';\n\n// Quick file validation\nconst validation = {\n  size_check: resumeContent.length < 50000, // ~50KB text limit\n  content_check: resumeContent.length > 100, // Minimum content\n  format_check: true // Assume valid since it reached here\n};\n\nconst isValid = validation.size_check && validation.content_check && validation.format_check;\n\nif (!isValid) {\n  return [{\n    json: {\n      ...data,\n      validation_error: true,\n      error_message: 'File validation failed - please check resume size and content'\n    }\n  }];\n}\n\n// Add processing start time for speed tracking\nreturn [{\n  json: {\n    ...data,\n    ai_processing_start: new Date().toISOString(),\n    validated: true\n  }\n}];"
+      },
+      "id": "10c1103a-7a90-4099-a9c5-f86fc5db09a5",
+      "name": "Station 5A: File Validator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        840,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-3-5-sonnet-20241022",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "57720256-6ba1-4087-a9db-8e1328fcca13",
+      "name": "Claude 3.5 Sonnet",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        460
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "q2s2KJn1GQj3PsHw",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Station 6A: Processing Complete Tracker\n// Track timing and prepare for delivery\n\nconst data = items[0].json;\nconst aiResponse = data.response;\nconst processingEnd = new Date().toISOString();\n\n// Calculate processing time\nconst startTime = new Date(data.ai_processing_start || data.timestamp);\nconst endTime = new Date();\nconst processingTimeMs = endTime - startTime;\nconst processingTimeSec = Math.round(processingTimeMs / 1000);\n\n// Prepare delivery package\nconst deliveryPackage = {\n  email: data.email,\n  optimizedResume: aiResponse,\n  originalFileName: data.fileName,\n  privilege_level: data.privilege_level,\n  resumes_remaining: data.resumes_remaining,\n  processing_time_seconds: processingTimeSec,\n  processing_id: data.processing_id,\n  route: data.route,\n  completed_at: processingEnd\n};\n\nreturn [{ json: deliveryPackage }];"
+      },
+      "id": "1b999c1a-02eb-4c72-a751-da0976329a8d",
+      "name": "Station 6A: Processing Tracker",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "adamhoemberg@gmail.com",
+        "toEmail": "={{ $('Station 5A: File Validator').item.json.email }}",
+        "subject": "Your Optimized Resume from ResumeSniper - Ready in {{ $json.processing_time_seconds }} seconds!",
+        "text": "Hello!\n\nYour ATS-optimized resume is ready! Processing completed in {{ $json.processing_time_seconds }} seconds.\n\n{{ $json.optimizedResume }}\n\nThis resume has been tailored specifically for your target job and optimized to get past ATS systems.\n\n**Important Reminders:**\n- This resume is AI-generated - please review and edit as needed\n- AI can make mistakes - you know your experience best\n- Always proofread before submitting to employers\n\n**Your Account Status:**\n- Privilege Level: {{ $json.privilege_level }}\n- Resumes Remaining: {{ $json.resumes_remaining === -1 ? 'Unlimited' : $json.resumes_remaining }}\n\nIf this tool helped you land an interview, we'd love to hear about it!\n\nBest of luck in your job search,\nThe ResumeSniper Team\n\n---\nBuilt by a Navy veteran who was tired of ATS systems rejecting qualified candidates.\nProcessing ID: {{ $json.processing_id }}",
+        "options": {}
+      },
+      "id": "9026ddda-6137-4293-9d70-53f06e65f6ec",
+      "name": "Station 6B: Email Delivery",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1740,
+        360
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "dEwJq2HcGZW5H36C",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "condition": "eq",
+              "keyValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "resumes_used",
+              "fieldValue": "={{ $json.privilege_level === 'admin' || $json.privilege_level === 'tester' || $json.privilege_level === 'foundation' ? $json.resumes_used || 0 : ($json.resumes_used || 0) + 1 }}"
+            },
+            {
+              "fieldId": "resumes_remaining",
+              "fieldValue": "={{ $json.privilege_level === 'admin' || $json.privilege_level === 'tester' || $json.privilege_level === 'foundation' ? -1 : Math.max(0, ($json.resumes_remaining || 1) - 1) }}"
+            },
+            {
+              "fieldId": "last_resume_date",
+              "fieldValue": "={{ $json.completed_at }}"
+            }
+          ]
+        }
+      },
+      "id": "d62aeb13-74d7-4904-92d8-13f93326f8a0",
+      "name": "Station 6C: Database Update",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1960,
+        360
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "09yc8ytHkLrcvGbA",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\": true, \"message\": \"Resume optimization completed in {{ $json.processing_time_seconds }} seconds! Check your email.\", \"processing_time\": {{ $json.processing_time_seconds }}, \"resumes_remaining\": {{ $json.resumes_remaining }}}",
+        "options": {}
+      },
+      "id": "e867e5f8-a4f6-4403-a09f-21459d9a652b",
+      "name": "Manufacturing Complete",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2180,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\": false, \"message\": \"Missing required fields: email, resume content, or job description\"}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "eaf5f1c7-3ad9-4a4c-adff-6046f795017a",
+      "name": "Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=  You are a master resume writer specializing in ATS optimization.\n\n  INSTRUCTIONS:\n  - Do NOT lie or over-embellish\n  - Create an ATS-optimized resume that matches the job requirements\n  - Use keywords from the job description naturally\n  - Maintain professional formatting\n  - Keep the same contact information\n  - Focus on relevant experience for this specific job\n\n  User Message:\n  ORIGINAL RESUME:\n  {{$json.resumeContent}}\n\n  JOB DESCRIPTION:\n  {{$json.jobDescription}}\n\n  Create an optimized resume that will get past ATS systems and land an interview:",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "={{ $json.resumeContent }}{{ $json.jobDescription }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1080,
+        280
+      ],
+      "id": "837da11b-3346-4b4c-a83b-d29ae71515df",
+      "name": "Basic LLM Chain"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Station 1: Input Receiving": {
+      "main": [
+        [
+          {
+            "node": "Immediate Customer Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Immediate Customer Response": {
+      "main": [
+        [
+          {
+            "node": "Station 2A: Input Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Station 2A: Input Validation": {
+      "main": [
+        [
+          {
+            "node": "Station 3: Whitelist Security Gateway",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Station 3: Whitelist Security Gateway": {
+      "main": [
+        [
+          {
+            "node": "Route Checker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Checker": {
+      "main": [
+        [
+          {
+            "node": "Database User Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Station 4: Authorization Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Database User Lookup": {
+      "main": [
+        [
+          {
+            "node": "User Status Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Status Processor": {
+      "main": [
+        [
+          {
+            "node": "Create New User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create New User": {
+      "main": [
+        [
+          {
+            "node": "Station 4: Authorization Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Station 4: Authorization Gate": {
+      "main": [
+        [
+          {
+            "node": "Station 5A: File Validator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Payment Required Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Station 5A: File Validator": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude 3.5 Sonnet": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Station 6A: Processing Tracker": {
+      "main": [
+        [
+          {
+            "node": "Station 6B: Email Delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Station 6B: Email Delivery": {
+      "main": [
+        [
+          {
+            "node": "Station 6C: Database Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Station 6C: Database Update": {
+      "main": [
+        [
+          {
+            "node": "Manufacturing Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Station 6A: Processing Tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4c8a891c-0456-4b4e-a668-379165ae2a24",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7b5154900ddfa644cf2213a830eec1aa29b0ca7ee0f71e1afab854d81aea7e98"
+  },
+  "id": "eyvvONx54Wsjlv33",
+  "tags": []
+}

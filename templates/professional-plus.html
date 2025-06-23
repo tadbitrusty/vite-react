@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{FULL_NAME}} - Resume</title>
+    <style>
+        /* Professional Plus Template - $8.99 Tier
+           Enhanced formatting for career growth with sophisticated design */
+        
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #2c3e50;
+            background: #ffffff;
+        }
+        
+        .resume-container {
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 0.75in;
+            box-sizing: border-box;
+        }
+        
+        /* Executive-style Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 50%, #ffffff 100%);
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #3498db, #2c3e50, #8e44ad, #3498db);
+            border-radius: 12px;
+            z-index: -1;
+        }
+        
+        .name {
+            font-size: 26pt;
+            font-weight: 400;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            letter-spacing: 2px;
+            font-family: 'Georgia', serif;
+        }
+        
+        .contact-info {
+            font-size: 11pt;
+            color: #34495e;
+            line-height: 1.4;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .contact-info a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        /* Sophisticated Section Styles */
+        .section {
+            margin-bottom: 28px;
+        }
+        
+        .section-title {
+            font-size: 15pt;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            border-radius: 25px;
+            text-align: center;
+            position: relative;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .section-title::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            background: #3498db;
+            border-radius: 50%;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            background: #3498db;
+            border-radius: 50%;
+        }
+        
+        /* Premium Experience Section */
+        .job-entry {
+            margin-bottom: 22px;
+            padding: 20px;
+            background: #fafbfc;
+            border: 1px solid #ecf0f1;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        
+        .job-entry::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #3498db, #8e44ad);
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .job-header {
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px dotted #bdc3c7;
+        }
+        
+        .job-title {
+            font-weight: 600;
+            font-size: 13pt;
+            color: #2c3e50;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .job-dates {
+            float: right;
+            font-weight: 500;
+            color: #8e44ad;
+            font-size: 11pt;
+            background: #f8f9ff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            border: 1px solid #e8eaf6;
+        }
+        
+        .company-info {
+            font-weight: 600;
+            color: #3498db;
+            margin-bottom: 10px;
+            font-size: 12pt;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .job-description ul {
+            margin: 12px 0;
+            padding-left: 25px;
+        }
+        
+        .job-description li {
+            margin-bottom: 6px;
+            color: #34495e;
+            position: relative;
+        }
+        
+        .job-description li::marker {
+            color: #3498db;
+            font-size: 14pt;
+        }
+        
+        /* Achievement highlights */
+        .achievement {
+            background: #e8f5e8;
+            padding: 8px 12px;
+            border-left: 4px solid #27ae60;
+            margin: 8px 0;
+            border-radius: 0 6px 6px 0;
+            font-style: italic;
+        }
+        
+        /* Elegant Education Section */
+        .education-entry {
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            border: 1px solid #e8eaf6;
+            border-radius: 10px;
+            border-left: 5px solid #8e44ad;
+        }
+        
+        .degree-info {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 12pt;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .school-info {
+            color: #8e44ad;
+            font-weight: 500;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        /* Premium Skills Section */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .skill-category {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            padding: 18px;
+            border-radius: 12px;
+            border: 1px solid #e8eaf6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .skill-category::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #3498db, #8e44ad, #e74c3c);
+        }
+        
+        .skill-category-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            font-size: 12pt;
+            font-family: 'Segoe UI', sans-serif;
+            border-bottom: 1px dotted #bdc3c7;
+            padding-bottom: 6px;
+        }
+        
+        .skill-list {
+            color: #34495e;
+            font-size: 11pt;
+            line-height: 1.8;
+        }
+        
+        /* Professional Summary Enhancement */
+        .summary-text {
+            font-size: 12pt;
+            line-height: 1.8;
+            color: #34495e;
+            background: #fafbfc;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #3498db;
+            font-style: italic;
+            position: relative;
+        }
+        
+        .summary-text::before {
+            content: '"';
+            font-size: 48pt;
+            color: #3498db;
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            opacity: 0.3;
+            font-family: Georgia, serif;
+        }
+        
+        /* Clear floats */
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        
+        /* Elegant hover effects */
+        @media screen {
+            .job-entry:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
+                transition: all 0.3s ease;
+            }
+            
+            .skill-category:hover {
+                transform: scale(1.02);
+                box-shadow: 0 6px 20px rgba(142, 68, 173, 0.15);
+                transition: all 0.3s ease;
+            }
+            
+            .education-entry:hover {
+                border-left-width: 8px;
+                transition: border-left-width 0.3s ease;
+            }
+        }
+        
+        /* Print optimization */
+        @media print {
+            body { 
+                font-size: 10pt;
+                line-height: 1.5;
+            }
+            .resume-container {
+                padding: 0.5in;
+            }
+            .header::before {
+                display: none;
+            }
+            .job-entry, .skill-category, .education-entry {
+                background: #ffffff !important;
+                box-shadow: none !important;
+                border: 1px solid #cccccc !important;
+                break-inside: avoid;
+            }
+            .section {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="resume-container">
+        <!-- Executive Header -->
+        <header class="header">
+            <h1 class="name">{{FULL_NAME}}</h1>
+            <div class="contact-info">
+                {{EMAIL}} | {{PHONE}} | {{LOCATION}}
+                {{#if LINKEDIN}}| <a href="{{LINKEDIN}}">LinkedIn Profile</a>{{/if}}
+            </div>
+        </header>
+
+        <!-- Professional Summary -->
+        {{#if SUMMARY}}
+        <section class="section">
+            <h2 class="section-title">Executive Summary</h2>
+            <div class="summary-text">{{SUMMARY}}</div>
+        </section>
+        {{/if}}
+
+        <!-- Core Competencies (Featured Position) -->
+        {{#if SKILLS}}
+        <section class="section">
+            <h2 class="section-title">Core Competencies</h2>
+            <div class="skills-grid">
+                {{SKILLS}}
+            </div>
+        </section>
+        {{/if}}
+
+        <!-- Professional Experience -->
+        <section class="section">
+            <h2 class="section-title">Professional Experience</h2>
+            {{EXPERIENCE}}
+        </section>
+
+        <!-- Education -->
+        <section class="section">
+            <h2 class="section-title">Education & Professional Development</h2>
+            {{EDUCATION}}
+        </section>
+
+        <!-- Certifications -->
+        {{#if CERTIFICATIONS}}
+        <section class="section">
+            <h2 class="section-title">Certifications & Achievements</h2>
+            {{CERTIFICATIONS}}
+        </section>
+        {{/if}}
+    </div>
+</body>
+</html>
