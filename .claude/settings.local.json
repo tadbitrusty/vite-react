@@ -27,7 +27,8 @@
       "Bash(find:*)",
       "Bash(rg:*)",
       "Bash(npm install:*)",
-      "Bash(vercel:*)"
+      "Bash(vercel:*)",
+      "Bash(zip:*)"
     ],
     "deny": []
   }
