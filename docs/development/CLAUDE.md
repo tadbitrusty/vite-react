@@ -1,7 +1,7 @@
 # CLAUDE.md - ATS Resume Website Project
 
 ## Project Overview
-**Project Name:** ResumeSniper (formerly ATS Terminator)  
+**Project Name:** Resume Vita (formerly ResumeSniper)  
 **Type:** SaaS Platform - AI-Powered Resume Optimization  
 **Founder:** Navy Veteran, Applied Engineering Management, 107 days sober  
 **Mission:** Build a tool to help job seekers bypass ATS filters and land interviews
@@ -24,7 +24,7 @@ A simple 4-step process:
 ## Brand Voice & Messaging
 - **Authentic & Direct:** Military-style communication, no corporate BS
 - **Transparent:** Honest about AI limitations, pricing, and process
-- **Personal Story:** "I'm a Navy veteran who couldn't get hired despite qualifications, so I built this"
+- **Personal Story:** "I was Navy aviation ordnance, now I'm delivering groceries despite engineering degrees, so I built this"
 - **No Fake Social Proof:** "Skip the fake 5-star reviews - try one free and see for yourself"
 
 ## Technical Architecture

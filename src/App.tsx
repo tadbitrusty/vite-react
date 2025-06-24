@@ -1,27 +1,10 @@
 import React, { useState } from 'react';
-import { Target, Upload, FileText, Zap, CheckCircle, AlertCircle } from 'lucide-react';
-import { UserFlowSelector } from './components/UserFlowSelector';
-import { TemplateSelector } from './components/TemplateSelector';
+import { Target, Upload, FileText, Zap, CheckCircle, AlertCircle, Plus } from 'lucide-react';
+import { UserFlowSelector, TemplateSelector, ResumeBuilder } from './components';
+import { API_ENDPOINTS, FILE_CONFIG, RESUME_TEMPLATES } from './constants';
+import type { NotificationProps, ResumeTemplate } from './types';
 
-// API configuration for new serverless architecture
-const API_CONFIG = {
-  PROCESS_RESUME_URL: '/api/process-resume',
-  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-  ALLOWED_FILE_TYPES: {
-    'application/pdf': '.pdf',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
-    'application/msword': '.doc',
-    'text/plain': '.txt',
-    'text/rtf': '.rtf',
-    'application/rtf': '.rtf'
-  }
-};
 
-interface NotificationProps {
-  type: 'success' | 'error' | 'info';
-  message: string;
-  onClose: () => void;
-}
 
 function Notification({ type, message, onClose }: NotificationProps) {
   const icons = {
@@ -51,52 +34,9 @@ function Notification({ type, message, onClose }: NotificationProps) {
   );
 }
 
-// Template options - exact specification from ResumeSniper spec
-const RESUME_TEMPLATES = [
-  { 
-    id: 'ats-optimized', 
-    name: 'ATS Optimized', 
-    icon: '⭐', 
-    price: 0, 
-    freeForFirstTime: true,
-    description: 'Traditional structure, works for any industry',
-    tier: 'free'
-  },
-  { 
-    id: 'entry-clean', 
-    name: 'Entry Clean', 
-    icon: '✨', 
-    price: 5.99, 
-    description: 'Modern design for entry-level professionals',
-    tier: 'entry'
-  },
-  { 
-    id: 'tech-focus', 
-    name: 'Tech Focus', 
-    icon: '⚙️', 
-    price: 7.99, 
-    description: 'Optimized for IT and engineering roles',
-    tier: 'professional'
-  },
-  { 
-    id: 'professional-plus', 
-    name: 'Professional Plus', 
-    icon: '👁️', 
-    price: 8.99, 
-    description: 'Enhanced formatting for career growth',
-    tier: 'premium'
-  },
-  { 
-    id: 'executive-format', 
-    name: 'Executive Format', 
-    icon: '💼', 
-    price: 9.99, 
-    description: 'Premium design for senior leadership',
-    tier: 'executive'
-  }
-];
 
 function App() {
+  const [currentView, setCurrentView] = useState<'optimizer' | 'builder'>('optimizer');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState('');
   const [email, setEmail] = useState('');
@@ -113,14 +53,14 @@ function App() {
 
   const validateFile = (file: File): boolean => {
     // Check file size
-    if (file.size > API_CONFIG.MAX_FILE_SIZE) {
-      showNotification('error', `File too large. Maximum size is ${API_CONFIG.MAX_FILE_SIZE / 1024 / 1024}MB`);
+    if (file.size > FILE_CONFIG.MAX_SIZE) {
+      showNotification('error', `File too large. Maximum size is ${FILE_CONFIG.MAX_SIZE / 1024 / 1024}MB`);
       return false;
     }
 
     // Check file type
-    const isValidType = Object.keys(API_CONFIG.ALLOWED_FILE_TYPES).includes(file.type) ||
-                       Object.values(API_CONFIG.ALLOWED_FILE_TYPES).some(ext => 
+    const isValidType = Object.keys(FILE_CONFIG.ALLOWED_TYPES).includes(file.type) ||
+                       Object.values(FILE_CONFIG.ALLOWED_TYPES).some(ext => 
                          file.name.toLowerCase().endsWith(ext)
                        );
     
@@ -165,7 +105,7 @@ function App() {
       setProgress(25);
       
       // Send to new serverless API
-      const response = await fetch(API_CONFIG.PROCESS_RESUME_URL, {
+      const response = await fetch(API_ENDPOINTS.PROCESS_RESUME, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -220,6 +160,21 @@ function App() {
     });
   };
 
+  if (currentView === 'builder') {
+    return (
+      <div className="min-h-screen relative px-4 py-8 md:py-16">
+        {notification && (
+          <Notification 
+            type={notification.type}
+            message={notification.message}
+            onClose={() => setNotification(null)}
+          />
+        )}
+        <ResumeBuilder onBack={() => setCurrentView('optimizer')} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen relative px-4 py-8 md:py-16">
       {notification && (
@@ -236,23 +191,23 @@ function App() {
           <div className="flex items-center justify-center mb-6">
             <Target className="w-12 h-12 text-[#4a90a4] mr-4" />
             <h1 className="text-[#4a90a4] text-5xl md:text-6xl font-bold" style={{ fontFamily: 'Crimson Text, serif' }}>
-              ResumeSniper
+              Resume Vita
             </h1>
           </div>
           <p className="text-white text-2xl md:text-3xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
-            AI-Powered Targeted Resumes to Beat ATS Systems
+            Breathing Life Into Your Resume
           </p>
           <div className="max-w-3xl mx-auto mb-8">
             <p className="text-gray-300 text-lg mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
-              I'm a Navy veteran with multiple degrees. During the pandemic, I was a business owner. 
-              When I had to re-enter the job market, I found myself taking warehouse jobs just to survive week to week.
+              I was Navy aviation ordnance - I made things go boom and understood complex systems others missed. 
+              Now I have engineering degrees and real experience, but I'm delivering groceries because ATS systems kill qualified candidates before humans ever see them.
             </p>
             <p className="text-gray-300 text-lg mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
-              The problem? Every job application now requires a customized resume to get past ATS systems. 
-              And honestly? I was too lazy to rewrite my resume 50 times.
+              I was dead in the water - overqualified for grunt work, 'under-qualified' for engineering roles I could do in my sleep. 
+              So I built Resume Vita to bring dead resumes back to life and get qualified people past these broken filters.
             </p>
             <p className="text-[#4a90a4] text-lg font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>
-              So I built this tool to solve my own problem. Now it can solve yours too.
+              Your resume isn't garbage - it's just suffocating under systems that don't understand what you bring to the table.
             </p>
           </div>
         </header>
@@ -269,6 +224,25 @@ function App() {
           <p className="text-[#4a90a4] text-lg font-medium">
             This is why I'm giving you one for free. See the proof for yourself.
           </p>
+        </div>
+
+        {/* Need a Resume? Section */}
+        <div className="text-center mb-12">
+          <div className="bg-[#1a365d] bg-opacity-30 rounded-lg p-6 border border-[#4a90a4] border-opacity-40 max-w-md mx-auto">
+            <h3 className="text-white text-xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
+              Don't Have a Resume?
+            </h3>
+            <p className="text-gray-300 text-sm mb-4">
+              Build a professional resume from scratch in under an hour
+            </p>
+            <button
+              onClick={() => setCurrentView('builder')}
+              className="bg-gradient-to-r from-[#4a90a4] to-[#5ba0b5] text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center mx-auto space-x-2 transform hover:scale-105 transition-transform"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Need a Resume?</span>
+            </button>
+          </div>
         </div>
 
         {/* User Flow Selection */}

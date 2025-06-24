@@ -14,12 +14,18 @@
     "deploy:production": "vercel --target production --prod",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
-    "health-check": "curl -f http://localhost:3000/api/health || exit 1",
-    "start": "npm run build && npm run preview"
+    "start": "npm run build && npm run preview",
+    "health-check": "node scripts/health-check.js",
+    "cleanup": "node scripts/cleanup.js",
+    "backup": "node scripts/backup.js",
+    "maintenance": "npm run cleanup && npm run health-check",
+    "full-backup": "npm run backup && npm run cleanup"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",
     "@supabase/supabase-js": "^2.39.7",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

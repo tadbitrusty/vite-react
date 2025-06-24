@@ -18,30 +18,25 @@ import {
   checkChargebackBlacklist,
   logProcessingAnalytics,
   createResumeJob,
-  updateResumeJob
-} from '../../lib/database';
-import { 
+  updateResumeJob,
   processTemplate, 
   getTemplateTarget,
-  getTemplatePromptEnhancements
-} from '../../lib/templateProcessor';
-import {
+  getTemplatePromptEnhancements,
+  generateResumePDF,
   AppError,
   ERROR_CODES,
   Logger,
   handleError,
   generateRequestId,
   getClientIP,
-  RateLimiter
-} from '../../lib/errorHandler';
-import {
+  RateLimiter,
   createSecurityMiddleware,
   processResumeSchema,
   sanitizeResumeContent,
   validateFileContent,
   validateEnvironment,
   ResourceMonitor
-} from '../../lib/security';
+} from '../../lib';
 
 // Initialize logger and validate environment
 const logger = Logger.getInstance();
@@ -318,8 +313,8 @@ async function createPaymentSession(template, email, resumeData) {
   return session.url;
 }
 
-// Send resume via email with processed HTML template
-async function sendResumeEmail(email, processedTemplate, template, fileName) {
+// Send resume via email with PDF attachment
+async function sendResumeEmail(email, processedTemplate, template, fileName, resumeData) {
   const templateNames = {
     'ats-optimized': 'ATS Optimized',
     'entry-clean': 'Modern Clean',
@@ -331,6 +326,10 @@ async function sendResumeEmail(email, processedTemplate, template, fileName) {
   const templateName = templateNames[template] || 'ATS Optimized';
   const isFreeTier = template === 'ats-optimized';
   
+  // Generate PDF from the processed template and resume data
+  const pdfBuffer = await generateResumePDF(resumeData, template);
+  const pdfFileName = `${fileName.replace(/\.[^/.]+$/, '')}_${template}.pdf`;
+
   const emailContent = `
     <h2>Your ${templateName} Resume is Ready!</h2>
     
@@ -350,23 +349,22 @@ async function sendResumeEmail(email, processedTemplate, template, fileName) {
       </ul>
     </div>
     
-    <div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-      <h4>Your Ready-to-Use Resume (HTML Format):</h4>
-      <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
-        Copy the content below and paste into your preferred document editor, or save as an HTML file for perfect formatting.
+    <div style="background: #e8f4fd; padding: 20px; border: 1px solid #3498db; border-radius: 8px;">
+      <h4>📎 Your Resume is Attached as PDF</h4>
+      <p style="font-size: 14px; color: #333; margin-bottom: 15px;">
+        Your optimized resume is attached to this email as a ready-to-use PDF file: <strong>${pdfFileName}</strong>
       </p>
-      <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 11px; max-height: 400px; overflow-y: auto;">
-${processedTemplate.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
-      </div>
+      <p style="font-size: 12px; color: #666;">
+        This PDF is formatted for professional applications and is fully ATS-compatible.
+      </p>
     </div>
     
     <p><strong>How to Use Your Resume:</strong></p>
     <ol>
-      <li><strong>Method 1 (Recommended):</strong> Copy the HTML content above and save as "${fileName.replace(/\.[^/.]+$/, '')}_${template}.html" - Open in any browser to see the styled resume</li>
-      <li><strong>Method 2:</strong> Copy content and paste into Word/Google Docs, then apply formatting</li>
-      <li><strong>Method 3:</strong> Use the HTML as a reference to manually recreate in your preferred format</li>
-      <li>Review and make any final personal adjustments</li>
-      <li>Export as PDF for applications</li>
+      <li><strong>Download the attached PDF</strong> - Ready for immediate use in job applications</li>
+      <li><strong>Review and customize</strong> - Make any final personal adjustments if needed</li>
+      <li><strong>Apply with confidence</strong> - Your resume is now ATS-optimized for better visibility</li>
+      <li><strong>Save copies</strong> - Keep the PDF for future applications to similar roles</li>
     </ol>
     
     ${!isFreeTier ? `
@@ -377,14 +375,14 @@ ${processedTemplate.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
     ` : `
     <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;">
       <h4 style="color: #3498db; margin-top: 0;">Want More Options?</h4>
-      <p>This was your FREE ATS Optimized resume. Return to ResumeSniper as a "Returning User" to access premium templates with enhanced styling and specialized formatting for $5.99-$9.99.</p>
+      <p>This was your FREE ATS Optimized resume. Return to Resume Vita as a "Returning User" to access premium templates with enhanced styling and specialized formatting for $5.99-$9.99.</p>
     </div>
     `}
     
     <p>Questions? Reply to this email and we'll help you out.</p>
     
     <p>Best of luck with your job search!</p>
-    <p>The ResumeSniper Team</p>
+    <p>The Resume Vita Team</p>
     
     <hr style="margin: 30px 0;">
     <p style="font-size: 12px; color: #666;">
@@ -396,8 +394,15 @@ ${processedTemplate.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
   await resend.emails.send({
     from: process.env.FROM_EMAIL,
     to: email,
-    subject: `Your ${templateName} Resume is Ready - ResumeSniper`,
-    html: emailContent
+    subject: `Your ${templateName} Resume is Ready - Resume Vita`,
+    html: emailContent,
+    attachments: [
+      {
+        filename: pdfFileName,
+        content: pdfBuffer,
+        type: 'application/pdf'
+      }
+    ]
   });
 }
 
@@ -523,8 +528,8 @@ export default async function handler(req, res) {
         // Process through template system
         const processedTemplate = await processTemplate(template, resumeData);
 
-        // Send email with processed template
-        await sendResumeEmail(email, processedTemplate, template, fileName);
+        // Send email with processed template and PDF attachment
+        await sendResumeEmail(email, processedTemplate, template, fileName, resumeData);
 
         // Update user record
         await upsertUser(email, {
