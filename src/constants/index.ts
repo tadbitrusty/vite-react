@@ -69,13 +69,13 @@ export const RESUME_TEMPLATES = [
 export const RESUME_BUILDER_PRICING = {
   BASIC: {
     price: 45,
-    stripePrice: 'price_BASIC_RESUME_BUILDER_PLACEHOLDER',
+    stripePrice: 'price_1RdahQK2tmo6HKYKhHAwxQce',
     name: 'Basic Resume Builder',
     description: 'Form data populated into professional template'
   },
   ENHANCED: {
     price: 75,
-    stripePrice: 'price_ENHANCED_RESUME_BUILDER_PLACEHOLDER',
+    stripePrice: 'price_1RdaiAK2tmo6HKYKZUt5ZN0U',
     name: 'AI-Enhanced Resume Builder',
     description: 'AI improves content + professional template'
   }

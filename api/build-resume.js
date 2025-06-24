@@ -59,15 +59,15 @@ try {
 // Initialize security middleware
 const security = createSecurityMiddleware();
 
-// Stripe product configuration for resume builder
+// Stripe product configuration for resume builder - LIVE PRICING
 const RESUME_BUILDER_PRODUCTS = {
   'basic': {
-    price_id: 'price_BASIC_RESUME_BUILDER_PLACEHOLDER', // Update in Stripe dashboard
+    price_id: 'price_1RdahQK2tmo6HKYKhHAwxQce', // $45.00 - LIVE
     amount: 4500, // $45.00
     name: 'Basic Resume Builder'
   },
   'enhanced': {
-    price_id: 'price_ENHANCED_RESUME_BUILDER_PLACEHOLDER', // Update in Stripe dashboard
+    price_id: 'price_1RdaiAK2tmo6HKYKZUt5ZN0U', // $75.00 - LIVE
     amount: 7500, // $75.00
     name: 'AI-Enhanced Resume Builder'
   }
