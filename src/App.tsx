@@ -89,12 +89,8 @@ function App() {
       return;
     }
 
-    // Validate template selection for first-time users
-    if (isFirstTime && selectedTemplate !== 'ats-optimized') {
-      showNotification('error', 'First-time users can only select the FREE ATS Optimized template');
-      setSelectedTemplate('ats-optimized');
-      return;
-    }
+    // Allow any template selection - remove first-time restriction
+    // Users can pay for premium templates immediately if they want
 
     setProcessing(true);
     setProgress(10);

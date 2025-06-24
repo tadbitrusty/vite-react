@@ -32,19 +32,17 @@ export function TemplateSelector({
     <div className="max-w-5xl mx-auto mb-12">
       <div className="bg-[#1a365d] bg-opacity-20 rounded-lg p-6 border border-[#4a90a4] border-opacity-30">
         <h3 className="text-[#4a90a4] text-xl font-semibold mb-4 text-center" style={{ fontFamily: 'Inter, sans-serif' }}>
-          {isFirstTime ? 'Your FREE Template' : 'Choose Your Premium Template'}
+          Choose Your Template
         </h3>
         
-        {isFirstTime && (
-          <p className="text-gray-300 text-sm mb-6 text-center" style={{ fontFamily: 'Inter, sans-serif' }}>
-            New users get the ATS Optimized template free. Try it and see the quality!
-          </p>
-        )}
+        <p className="text-gray-300 text-sm mb-6 text-center" style={{ fontFamily: 'Inter, sans-serif' }}>
+          {isFirstTime ? "Get the ATS Optimized template FREE, or choose any premium template!" : 'All templates available with instant payment processing'}
+        </p>
         
         {/* 1x5 Template Layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {templates.map((template) => {
-            const isDisabled = isFirstTime && template.id !== 'ats-optimized';
+            const isDisabled = false; // Remove first-time restrictions - anyone can pay
             const isSelected = selectedTemplate === template.id;
             
             return (
@@ -102,7 +100,7 @@ export function TemplateSelector({
         <div className="text-center mt-6">
           <p className="text-gray-400 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
             {isFirstTime 
-              ? "First resume is always free to test our quality. Choose 'Returning User' above for premium templates."
+              ? "ATS Optimized is always free. Premium templates include advanced AI optimization and professional styling."
               : "All premium templates include advanced AI optimization and professional styling."
             }
           </p>
