@@ -23,7 +23,7 @@ export const healthCheckSchema = z.object({});
 // Security headers middleware
 export function setSecurityHeaders(req: any, res: any) {
   // CORS headers (restrictive in production)
-  res.setHeader('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_URL || 'https://resumevita.com');
+  res.setHeader('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_URL || 'https://resumevita.io');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
@@ -215,8 +215,8 @@ export function validateOrigin(req: any): void {
   const origin = req.headers.origin;
   const allowedOrigins = [
     process.env.NEXT_PUBLIC_URL,
-    'https://resumevita.com',
-    'https://www.resumevita.com'
+    'https://resumevita.io',
+    'https://www.resumevita.io'
   ].filter(Boolean);
   
   // Allow requests without origin (direct API calls)
