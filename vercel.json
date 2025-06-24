@@ -1,17 +1,23 @@
 {
   "functions": {
-    "api/process-resume.js": {
+    "pages/api/process-resume.js": {
       "maxDuration": 60
     },
-    "api/stripe-webhook.js": {
+    "pages/api/stripe-webhook.js": {
       "maxDuration": 30
+    },
+    "pages/api/build-resume.js": {
+      "maxDuration": 60
+    },
+    "pages/api/health.js": {
+      "maxDuration": 10
     }
   },
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://resumevita.io" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://resumevita.com" },
         { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
       ]
