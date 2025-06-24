@@ -28,7 +28,15 @@
       "Bash(rg:*)",
       "Bash(npm install:*)",
       "Bash(vercel:*)",
-      "Bash(zip:*)"
+      "Bash(zip:*)",
+      "Bash(sudo cp:*)",
+      "Bash(./start_daemon.sh:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(systemctl:*)",
+      "WebFetch(domain:resumevita.io)"
     ],
     "deny": []
   }
