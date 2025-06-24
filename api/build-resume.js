@@ -62,12 +62,12 @@ const security = createSecurityMiddleware();
 // Stripe product configuration for resume builder
 const RESUME_BUILDER_PRODUCTS = {
   'basic': {
-    price_id: 'price_basic_resume_builder_45', // Need to create in Stripe
+    price_id: 'price_BASIC_RESUME_BUILDER_PLACEHOLDER', // Update in Stripe dashboard
     amount: 4500, // $45.00
     name: 'Basic Resume Builder'
   },
   'enhanced': {
-    price_id: 'price_enhanced_resume_builder_75', // Need to create in Stripe
+    price_id: 'price_ENHANCED_RESUME_BUILDER_PLACEHOLDER', // Update in Stripe dashboard
     amount: 7500, // $75.00
     name: 'AI-Enhanced Resume Builder'
   }
