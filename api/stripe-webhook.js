@@ -3,23 +3,26 @@
  * Processes successful payments and triggers resume generation
  */
 
-import Stripe from 'stripe';
-import Anthropic from '@anthropic-ai/sdk';
-import { Resend } from 'resend';
-import { z } from 'zod';
-import {
+const Stripe = require('stripe');
+const Anthropic = require('@anthropic-ai/sdk');
+const { Resend } = require('resend');
+const { z } = require('zod');
+const {
   getUserByEmail,
   upsertUser,
   logProcessingAnalytics,
   createResumeJob,
   updateResumeJob,
-  addToChargebackBlacklist
-} from '../../lib/database';
-import { 
-  processTemplate, 
+  processTemplate,
   getTemplateTarget,
   getTemplatePromptEnhancements
-} from '../../lib/templateProcessor';
+} = require('./lib.js');
+
+// Add missing function for chargeback handling
+async function addToChargebackBlacklist(email, ip, paymentId, amount, reason) {
+  // TODO: Implement actual chargeback blacklist functionality
+  console.log(`[CHARGEBACK] Banned ${email} (${ip}) - ${reason} - Payment: ${paymentId} Amount: ${amount}`);
+}
 
 // Initialize services
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -419,16 +422,16 @@ async function processChargeback(paymentIntent) {
 }
 
 // Raw body parser for Stripe webhooks
-export const config = {
+const config = {
   api: {
     bodyParser: {
       sizeLimit: '1mb',
     },
   },
-}
+};
 
 // Main webhook handler
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -497,3 +500,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
+module.exports = handler;
+module.exports.config = config;

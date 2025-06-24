@@ -8,7 +8,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
 import { z } from 'zod';
-import {
+const {
   getUserByEmail,
   upsertUser,
   checkBadEmail,
@@ -36,7 +36,7 @@ import {
   validateFileContent,
   validateEnvironment,
   ResourceMonitor
-} from '../../lib';
+} = require('./lib.js');
 
 // Initialize logger and validate environment
 const logger = Logger.getInstance();
