@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { Target, Upload, FileText, Zap, CheckCircle, AlertCircle, Plus } from 'lucide-react';
-import { UserFlowSelector, TemplateSelector, ResumeBuilder } from './components';
-import { API_ENDPOINTS, FILE_CONFIG, RESUME_TEMPLATES } from './constants';
-import type { NotificationProps, ResumeTemplate } from './types';
-
-
+import { UserFlowSelector, TemplateSelector, ResumeBuilder } from './index';
+import { API_ENDPOINTS, FILE_CONFIG, RESUME_TEMPLATES } from '@/constants';
+import type { NotificationProps, ResumeTemplate } from '../types';
 
 function Notification({ type, message, onClose }: NotificationProps) {
   const icons = {
@@ -34,8 +32,7 @@ function Notification({ type, message, onClose }: NotificationProps) {
   );
 }
 
-
-function App() {
+function ResumeVita() {
   const [currentView, setCurrentView] = useState<'optimizer' | 'builder'>('optimizer');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState('');
@@ -158,7 +155,7 @@ function App() {
 
   if (currentView === 'builder') {
     return (
-      <div className="min-h-screen relative px-4 py-8 md:py-16">
+      <div className="min-h-screen relative px-4 py-8 md:py-16 gradient-bg">
         {notification && (
           <Notification 
             type={notification.type}
@@ -172,7 +169,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen relative px-4 py-8 md:py-16">
+    <div className="min-h-screen relative px-4 py-8 md:py-16 gradient-bg">
       {notification && (
         <Notification 
           type={notification.type}
@@ -209,7 +206,7 @@ function App() {
         </header>
 
         {/* Anti-BS Section */}
-        <div className="text-center mb-12 p-8 bg-[#1a365d] bg-opacity-20 rounded-lg border border-[#4a90a4] border-opacity-30">
+        <div className="text-center mb-12 p-8 card-gradient rounded-lg">
           <h2 className="text-white text-2xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
             Skip the Fake 5-Star Reviews
           </h2>
@@ -224,7 +221,7 @@ function App() {
 
         {/* Need a Resume? Section */}
         <div className="text-center mb-12">
-          <div className="bg-[#1a365d] bg-opacity-30 rounded-lg p-6 border border-[#4a90a4] border-opacity-40 max-w-md mx-auto">
+          <div className="card-gradient rounded-lg p-6 max-w-md mx-auto">
             <h3 className="text-white text-xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Don't Have a Resume?
             </h3>
@@ -256,7 +253,7 @@ function App() {
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           
           {/* Resume Upload */}
-          <div className="input-container rounded-lg p-6">
+          <div className="card-gradient rounded-lg p-6">
             <label className="block text-[#4a90a4] text-xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Step 2: Upload Your Resume
             </label>
@@ -283,7 +280,7 @@ function App() {
           </div>
 
           {/* Job Description */}
-          <div className="input-container rounded-lg p-6">
+          <div className="card-gradient rounded-lg p-6">
             <label className="block text-[#4a90a4] text-xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Step 3: Paste Job Description
             </label>
@@ -319,7 +316,7 @@ function App() {
           </p>
           <div className="relative">
             <button 
-              className="resume-magician-button text-white text-xl px-16 py-6 rounded-lg flex items-center justify-center mx-auto space-x-4 transform hover:scale-105 transition-transform disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none"
+              className="btn-primary text-xl px-16 py-6 flex items-center justify-center mx-auto space-x-4 transform hover:scale-105 transition-transform disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none"
               onClick={handleSubmission}
               disabled={processing}
             >
@@ -351,7 +348,7 @@ function App() {
 
         {/* Disclaimer */}
         <div className="max-w-3xl mx-auto text-center">
-          <div className="bg-[#1a365d] bg-opacity-20 rounded-lg p-6 border border-[#4a90a4] border-opacity-30">
+          <div className="card-gradient rounded-lg p-6">
             <p className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Inter, sans-serif' }}>
               <strong>This resume is AI-generated.</strong> Please review and edit as needed. AI can make mistakes - you know your experience best.
             </p>
@@ -366,4 +363,4 @@ function App() {
   );
 }
 
-export default App;
+export default ResumeVita;
