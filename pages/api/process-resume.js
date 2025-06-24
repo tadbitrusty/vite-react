@@ -1,5 +1,5 @@
 /**
- * Main processing endpoint for ResumeSniper
+ * Main processing endpoint for Resume Vita
  * Handles the complete business logic flow including fraud detection,
  * first-time user processing, and payment routing
  */
@@ -65,27 +65,27 @@ try {
 // Initialize security middleware
 const security = createSecurityMiddleware();
 
-// Stripe product configuration
+// Stripe product configuration - Live pricing from production
 const STRIPE_PRODUCTS = {
   'entry-clean': {
-    price_id: 'price_1ObJUt2eZvKYlo2CaP4yGX8K',
+    price_id: 'price_1RdLj0K2tmo6HKYKTPY41pOa',
     amount: 599,
-    name: 'Modern Clean Template'
+    name: 'Premium Classic'
   },
   'tech-focus': {
-    price_id: 'price_1ObJV12eZvKYlo2CbQ5rYH9L',
-    amount: 799,
-    name: 'Technical Focus Template'
+    price_id: 'price_1RdLkqK2tmo6HKYKkCPPcVtQ',
+    amount: 999,
+    name: 'Tech Focus'
   },
   'professional-plus': {
-    price_id: 'price_1ObJV52eZvKYlo2CcR6sZI0M',
-    amount: 899,
-    name: 'Professional Plus Template'
+    price_id: 'price_1RdLjbK2tmo6HKYKwByFU7dy',
+    amount: 799,
+    name: 'Premium Plus'
   },
   'executive-format': {
-    price_id: 'price_1ObJV92eZvKYlo2CdS7tAJ1N',
-    amount: 999,
-    name: 'Executive Format Template'
+    price_id: 'price_1RdLkEK2tmo6HKYKaSNqvrh1',
+    amount: 899,
+    name: 'Executive Format'
   }
 };
 
