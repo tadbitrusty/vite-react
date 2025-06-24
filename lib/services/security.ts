@@ -119,7 +119,7 @@ export function validateEnvironment() {
     envSchema.parse(process.env);
     logger.info('Environment validation passed');
   } catch (error) {
-    logger.error('Environment validation failed', error);
+    logger.error('Environment validation failed', error as Error);
     throw new Error('Invalid environment configuration');
   }
 }
