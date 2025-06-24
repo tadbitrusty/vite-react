@@ -3,10 +3,10 @@
  * Handles form-based resume creation with two pricing tiers
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-import Stripe from 'stripe';
-import { Resend } from 'resend';
-import { z } from 'zod';
+const Anthropic = require('@anthropic-ai/sdk');
+const Stripe = require('stripe');
+const { Resend } = require('resend');
+const { z } = require('zod');
 const {
   getUserByEmail,
   upsertUser,
@@ -34,26 +34,30 @@ const {
 
 // Initialize logger and validate environment
 const logger = Logger.getInstance();
-validateEnvironment();
+const envValid = validateEnvironment();
 
 // Initialize services
 let anthropic, stripe, resend;
 
 try {
-  anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  });
+  if (envValid) {
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
 
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2023-10-16',
-  });
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16',
+    });
 
-  resend = new Resend(process.env.RESEND_API_KEY);
-  
-  logger.info('Resume builder services initialized successfully');
+    resend = new Resend(process.env.RESEND_API_KEY);
+    
+    logger.info('Resume builder services initialized successfully');
+  } else {
+    logger.warn('Resume builder services not initialized due to missing environment variables');
+  }
 } catch (error) {
   logger.error('Failed to initialize resume builder services', error);
-  throw new Error('Service initialization failed');
+  // Don't throw error here - let API handle gracefully
 }
 
 // Initialize security middleware
@@ -277,19 +281,36 @@ ${processedTemplate.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
   });
 }
 
-// Main handler function
-export default async function handler(req, res) {
+// Main handler function with comprehensive error catching
+module.exports = async function handler(req, res) {
   const startTime = Date.now();
-  const requestId = generateRequestId();
-  const ip = getClientIP(req);
-  const userAgent = req.headers['user-agent'] || '';
+  let requestId, ip, userAgent, context;
   
-  const context = {
-    requestId,
-    ip,
-    userAgent,
-    timestamp: new Date().toISOString()
-  };
+  try {
+    requestId = generateRequestId();
+    ip = getClientIP(req);
+    userAgent = req.headers['user-agent'] || '';
+    
+    context = {
+      requestId,
+      ip,
+      userAgent,
+      timestamp: new Date().toISOString()
+    };
+
+    // Ensure JSON response headers are set first
+    res.setHeader('Content-Type', 'application/json');
+  } catch (initError) {
+    // Fallback if even basic initialization fails
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to initialize request handler',
+      error_code: 'INITIALIZATION_ERROR',
+      request_id: 'unknown',
+      timestamp: new Date().toISOString()
+    });
+  }
 
   try {
     // Set security headers
@@ -303,6 +324,11 @@ export default async function handler(req, res) {
     // Validate request method
     if (req.method !== 'POST') {
       throw new AppError(ERROR_CODES.VALIDATION_FAILED, 'Only POST requests allowed', 405);
+    }
+
+    // Check if environment is properly configured
+    if (!envValid) {
+      throw new AppError(ERROR_CODES.VALIDATION_FAILED, 'Service temporarily unavailable - configuration error', 503);
     }
 
     logger.info('Resume builder request started', { method: req.method }, context);
@@ -368,13 +394,30 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    // Handle all errors through centralized error handler
-    const errorResponse = handleError(error, requestId, context);
-    const statusCode = error instanceof AppError ? error.statusCode : 500;
-    
-    ResourceMonitor.logRequestMetrics('/api/build-resume', Date.now() - startTime);
-    
-    return res.status(statusCode).json(errorResponse);
+    try {
+      // Handle all errors through centralized error handler
+      const errorResponse = handleError(error, requestId || 'unknown', context || {});
+      const statusCode = error instanceof AppError ? error.statusCode : 500;
+      
+      ResourceMonitor.logRequestMetrics('/api/build-resume', Date.now() - startTime);
+      
+      // Ensure Content-Type is JSON
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(statusCode).json(errorResponse);
+    } catch (handlingError) {
+      // Ultimate fallback - if even error handling fails
+      console.error('Critical error in error handler:', handlingError);
+      console.error('Original error:', error);
+      
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(500).json({
+        success: false,
+        error: 'Critical system error',
+        error_code: 'CRITICAL_ERROR',
+        request_id: requestId || 'unknown',
+        timestamp: new Date().toISOString()
+      });
+    }
   }
 }
 
