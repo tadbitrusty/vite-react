@@ -1,15 +1,15 @@
 {
   "functions": {
-    "pages/api/process-resume.js": {
+    "api/process-resume.js": {
       "maxDuration": 60
     },
-    "pages/api/stripe-webhook.js": {
+    "api/stripe-webhook.js": {
       "maxDuration": 30
     },
-    "pages/api/build-resume.js": {
+    "api/build-resume.js": {
       "maxDuration": 60
     },
-    "pages/api/health.js": {
+    "api/health.js": {
       "maxDuration": 10
     }
   },
