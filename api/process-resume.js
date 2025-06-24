@@ -4,10 +4,9 @@
  * first-time user processing, and payment routing
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-import Stripe from 'stripe';
-import { Resend } from 'resend';
-import { z } from 'zod';
+const Anthropic = require('@anthropic-ai/sdk');
+const Stripe = require('stripe');
+const { Resend } = require('resend');
 const {
   getUserByEmail,
   upsertUser,
@@ -406,19 +405,36 @@ async function sendResumeEmail(email, processedTemplate, template, fileName, res
   });
 }
 
-// Main handler function
-export default async function handler(req, res) {
+// Main handler function with comprehensive error catching
+module.exports = async function handler(req, res) {
   const startTime = Date.now();
-  const requestId = generateRequestId();
-  const ip = getClientIP(req);
-  const userAgent = req.headers['user-agent'] || '';
+  let requestId, ip, userAgent, context;
   
-  const context = {
-    requestId,
-    ip,
-    userAgent,
-    timestamp: new Date().toISOString()
-  };
+  try {
+    requestId = generateRequestId();
+    ip = getClientIP(req);
+    userAgent = req.headers['user-agent'] || '';
+    
+    context = {
+      requestId,
+      ip,
+      userAgent,
+      timestamp: new Date().toISOString()
+    };
+
+    // Ensure JSON response headers are set first
+    res.setHeader('Content-Type', 'application/json');
+  } catch (initError) {
+    // Fallback if even basic initialization fails
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to initialize request handler',
+      error_code: 'INITIALIZATION_ERROR',
+      request_id: 'unknown',
+      timestamp: new Date().toISOString()
+    });
+  }
 
   try {
     // Set security headers
@@ -628,12 +644,29 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    // Handle all errors through centralized error handler
-    const errorResponse = handleError(error, requestId, context);
-    const statusCode = error instanceof AppError ? error.statusCode : 500;
-    
-    ResourceMonitor.logRequestMetrics('/api/process-resume', Date.now() - startTime);
-    
-    return res.status(statusCode).json(errorResponse);
+    try {
+      // Handle all errors through centralized error handler
+      const errorResponse = handleError(error, requestId || 'unknown', context || {});
+      const statusCode = error instanceof AppError ? error.statusCode : 500;
+      
+      ResourceMonitor.logRequestMetrics('/api/process-resume', Date.now() - startTime);
+      
+      // Ensure Content-Type is JSON
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(statusCode).json(errorResponse);
+    } catch (handlingError) {
+      // Ultimate fallback - if even error handling fails
+      console.error('Critical error in error handler:', handlingError);
+      console.error('Original error:', error);
+      
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(500).json({
+        success: false,
+        error: 'Critical system error',
+        error_code: 'CRITICAL_ERROR',
+        request_id: requestId || 'unknown',
+        timestamp: new Date().toISOString()
+      });
+    }
   }
 }
