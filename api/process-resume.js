@@ -39,26 +39,30 @@ const {
 
 // Initialize logger and validate environment
 const logger = Logger.getInstance();
-validateEnvironment();
+const envValid = validateEnvironment();
 
 // Initialize services with error handling
 let anthropic, stripe, resend;
 
 try {
-  anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  });
+  if (envValid) {
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
 
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2023-10-16',
-  });
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16',
+    });
 
-  resend = new Resend(process.env.RESEND_API_KEY);
-  
-  logger.info('Services initialized successfully');
+    resend = new Resend(process.env.RESEND_API_KEY);
+    
+    logger.info('Services initialized successfully');
+  } else {
+    logger.warn('Services not initialized due to missing environment variables');
+  }
 } catch (error) {
   logger.error('Failed to initialize services', error);
-  throw new Error('Service initialization failed');
+  // Don't throw error here - let API handle gracefully
 }
 
 // Initialize security middleware
@@ -448,6 +452,11 @@ module.exports = async function handler(req, res) {
     // Validate request method
     if (req.method !== 'POST') {
       throw new AppError(ERROR_CODES.VALIDATION_FAILED, 'Only POST requests allowed', 405);
+    }
+
+    // Check if environment is properly configured
+    if (!envValid) {
+      throw new AppError(ERROR_CODES.VALIDATION_FAILED, 'Service temporarily unavailable - configuration error', 503);
     }
 
     logger.info('Processing resume request started', { method: req.method }, context);
