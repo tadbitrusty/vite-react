@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:frontend && npm run build:api",
+    "build:frontend": "vite build",
+    "build:api": "tsc --project tsconfig.api.json",
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc --noEmit --skipLibCheck",
