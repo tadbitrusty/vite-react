@@ -1,233 +1,222 @@
-# Resume Vita 🚀
+# Resume Vita v2 🚀
 
-**Breathing Life Into Your Resume**
+> Enterprise-grade ATS resume optimization platform built with modern web technologies
 
-A modern SaaS platform for AI-powered resume optimization and building, designed to help job seekers bypass ATS filters and land interviews.
+## Overview
 
-## 🎯 Features
-
-### Resume Optimizer
-- **ATS-Friendly Optimization**: Tailors existing resumes for specific job descriptions
-- **Multiple Templates**: 5 professional templates (free to premium tiers)
-- **AI-Powered Processing**: Uses Claude 3.5 Sonnet for intelligent content enhancement
-- **PDF Delivery**: Professional resume delivered via email attachment
-
-### Resume Builder
-- **From-Scratch Creation**: Build professional resumes in under an hour
-- **Two-Tier Pricing**: Basic ($45) and AI-Enhanced ($75) options
-- **Chronological Format**: Industry-standard format optimized for ATS systems
-- **Real-Time Preview**: See your resume as you build it
+Resume Vita v2 is a complete rewrite of the original ATS resume optimization service, transformed from a proof-of-concept into a production-ready, enterprise-grade application. This monorepo contains both the frontend and backend applications with shared packages for maximum code reuse and type safety.
 
 ## 🏗️ Architecture
 
-### Tech Stack
-- **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS
-- **Backend**: Next.js API Routes (Serverless)
-- **Database**: Supabase (PostgreSQL)
-- **Payments**: Stripe
-- **Email**: Resend
-- **AI**: Anthropic Claude 3.5 Sonnet
-- **Deployment**: Vercel
+### Technology Stack
+
+- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS + Zustand
+- **Backend**: tRPC + Prisma + PostgreSQL + Redis
+- **Infrastructure**: Vercel + Docker + GitHub Actions
+- **Quality**: ESLint + Prettier + Husky + TypeScript strict mode
 
 ### Project Structure
+
 ```
-├── docs/                    # Documentation
-│   ├── development/         # Development guides
-│   ├── deployment/         # Deployment instructions
-│   └── api/                # API documentation
-├── lib/                    # Backend services
-│   ├── services/           # Core business logic
-│   └── utils/             # Utility functions
-├── pages/api/             # API endpoints
-├── src/                   # Frontend application
-│   ├── components/        # React components
-│   ├── constants/         # Application constants
-│   ├── types/            # TypeScript definitions
-│   └── utils/            # Frontend utilities
-├── templates/            # Resume templates
-└── scripts/             # Deployment & utility scripts
+resume-vita-v2/
+├── apps/
+│   ├── web/                    # Next.js frontend application
+│   └── api/                    # tRPC backend API
+├── packages/
+│   ├── ui/                     # Shared UI components
+│   ├── types/                  # Shared TypeScript types
+│   ├── config/                 # Shared configuration
+│   └── utils/                  # Shared utilities
+└── tools/
+    ├── eslint-config/          # ESLint configuration
+    └── tailwind-config/        # Tailwind configuration
 ```
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- npm or yarn
-- Supabase account
-- Stripe account
-- Anthropic API key
-- Resend API key
+
+- Node.js 18.17.0 or higher
+- pnpm 8.0.0 or higher
+- PostgreSQL database
+- Redis instance (optional, for caching)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd ATS-resume-wesite
+   cd resume-vita-v2
    ```
 
 2. **Install dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
-3. **Environment Setup**
+3. **Set up environment variables**
    ```bash
-   cp .env.example .env
-   # Fill in your API keys and configuration
+   cp apps/api/.env.example apps/api/.env
+   # Edit the .env file with your configuration
    ```
 
-4. **Database Setup**
+4. **Set up the database**
    ```bash
-   npm run db:migrate
+   pnpm db:push
+   pnpm db:seed
    ```
 
-5. **Start Development Server**
+5. **Start development servers**
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
-6. **Visit Application**
-   Open [http://localhost:5173](http://localhost:5173)
+This will start:
+- Frontend at `http://localhost:3000`
+- API at `http://localhost:3001`
 
-## 📧 Environment Variables
+## 📦 Available Scripts
+
+### Root Level Commands
+
+- `pnpm dev` - Start all development servers
+- `pnpm build` - Build all applications
+- `pnpm lint` - Lint all packages
+- `pnpm type-check` - Type check all packages
+- `pnpm test` - Run tests across all packages
+- `pnpm format` - Format code with Prettier
+
+### Database Commands
+
+- `pnpm db:push` - Push schema changes to database
+- `pnpm db:migrate` - Create and run migrations
+- `pnpm db:studio` - Open Prisma Studio
+- `pnpm db:seed` - Seed the database with initial data
+
+## 🎯 Key Features
+
+### ✅ Completed (Phase 1)
+
+- **Modern Monorepo Setup**: Turborepo with pnpm workspaces
+- **Type Safety**: TypeScript strict mode with end-to-end type safety
+- **UI Framework**: Next.js 14 with App Router and React Server Components
+- **Styling System**: Tailwind CSS with custom design tokens
+- **Database**: Prisma ORM with PostgreSQL and comprehensive schema
+- **API Layer**: tRPC for type-safe API endpoints
+- **State Management**: Zustand with persistence and devtools
+- **Development Tools**: ESLint, Prettier, and comprehensive tooling
+
+### 🚧 In Progress (Phase 2)
+
+- **Core Business Logic**: Resume processing and AI integration
+- **File Upload**: Secure file handling and processing
+- **Payment Integration**: Stripe checkout and webhook handling
+- **Email Delivery**: Professional email templates and delivery
+- **PDF Generation**: Server-side PDF creation with Puppeteer
+
+### 📋 Planned (Phase 3)
+
+- **Caching Layer**: Redis for performance optimization
+- **Background Jobs**: Queue system for async processing
+- **Fraud Detection**: Advanced security and fraud prevention
+- **Monitoring**: Error tracking and performance monitoring
+- **Testing**: Comprehensive test suite
+
+## 🔧 Development
+
+### Code Style
+
+This project uses strict TypeScript, ESLint, and Prettier for code quality:
 
 ```bash
-# Database
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_KEY=your_supabase_service_key
+# Lint and fix
+pnpm lint
 
-# AI Services
-ANTHROPIC_API_KEY=your_anthropic_key
+# Format code
+pnpm format
 
-# Payments
-STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=your_webhook_secret
-
-# Email
-RESEND_API_KEY=your_resend_key
-FROM_EMAIL=noreply@yourdomain.com
-
-# Application
-NEXT_PUBLIC_URL=http://localhost:3000
+# Type check
+pnpm type-check
 ```
 
-## 🛠️ Development
-
-### Available Scripts
+### Database Workflow
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-npm run type-check   # TypeScript type checking
-npm run test         # Run tests (when implemented)
+# Make schema changes in apps/api/prisma/schema.prisma
+# Then push to development database
+pnpm db:push
+
+# For production, create migrations
+pnpm db:migrate
+
+# View data
+pnpm db:studio
 ```
 
-### Code Standards
-- **TypeScript**: Strict mode enabled
-- **ESLint**: Configured with React and TypeScript rules
-- **Prettier**: Code formatting (integrated with ESLint)
-- **Barrel Exports**: Clean import statements
-- **Component Structure**: Consistent patterns across all components
+### Adding New Features
 
-## 🚢 Deployment
+1. **Add types** in `packages/types/src/index.ts`
+2. **Create tRPC routes** in `apps/api/src/routers/`
+3. **Build UI components** in `apps/web/src/components/`
+4. **Update state management** in `apps/web/src/store/`
 
-### Vercel (Recommended)
+## 🏢 Architecture Decisions
 
-1. **Connect Repository**
-   ```bash
-   npm install -g vercel
-   vercel --prod
-   ```
+### Why This Stack?
 
-2. **Environment Variables**
-   - Add all environment variables in Vercel dashboard
-   - Set `NEXT_PUBLIC_URL` to your production domain
+- **Type Safety**: End-to-end TypeScript for reduced bugs
+- **Performance**: Next.js 14 with server components for optimal loading
+- **Developer Experience**: Hot reloading, strict linting, comprehensive tooling
+- **Scalability**: Monorepo structure supports team growth
+- **Production Ready**: Enterprise-grade security and monitoring
 
-3. **Database Migration**
-   ```bash
-   npm run db:migrate
-   ```
+### Design Patterns
 
-### Manual Deployment
+- **tRPC**: Type-safe API layer eliminates client/server type mismatches
+- **Zustand**: Lightweight state management with persistence
+- **Prisma**: Type-safe database access with automatic migrations
+- **Monorepo**: Shared packages ensure consistency across applications
 
-1. **Build Application**
-   ```bash
-   npm run build
-   ```
+## 🚀 Deployment
 
-2. **Deploy Static Files**
-   - Upload `dist/` folder to your hosting provider
-   - Configure API routes for serverless deployment
+### Development
 
-## 📊 Business Model
+```bash
+pnpm build
+pnpm start
+```
 
-### Pricing Tiers
+### Production
 
-**Resume Optimizer:**
-- Free ATS Optimized (first-time users)
-- Premium templates: $5.99 - $9.99
+The application is designed for deployment on Vercel with automatic database migrations and environment variable management.
 
-**Resume Builder:**
-- Basic: $45 (form data → template)
-- AI-Enhanced: $75 (AI improvement + template)
+## 📈 Performance
 
-**Revenue Strategy:**
-- Freemium model with premium upgrades
-- Cross-selling between optimizer and builder
-- Target: $15k/month gross revenue
+- **Core Web Vitals**: Optimized for perfect Lighthouse scores
+- **Bundle Size**: Tree-shaking and code splitting for minimal bundles
+- **Database**: Connection pooling and query optimization
+- **Caching**: Redis and CDN integration for global performance
 
-## 🔒 Security Features
+## 🔒 Security
 
-- **Input Validation**: Zod schemas for all API inputs
-- **Rate Limiting**: IP-based request throttling
-- **Fraud Detection**: Email and IP tracking
-- **File Validation**: Secure file upload handling
-- **Data Retention**: 48-hour auto-deletion policy
-- **Payment Security**: Stripe-handled transactions
+- **Input Validation**: Zod schemas for all user inputs
+- **CORS Protection**: Configured for production domains
+- **Rate Limiting**: IP-based rate limiting on API endpoints
+- **SQL Injection**: Prisma ORM prevents SQL injection attacks
+- **XSS Protection**: React's built-in XSS protection
 
-## 📝 API Documentation
+## 📞 Support
 
-### Main Endpoints
+For questions and support:
 
-#### `POST /api/process-resume`
-Optimizes existing resume for specific job description.
-
-#### `POST /api/build-resume`
-Creates new resume from form data.
-
-#### `POST /api/stripe-webhook`
-Handles Stripe payment confirmations.
-
-#### `GET /api/health`
-Health check endpoint.
-
-See `docs/api/` for detailed API documentation.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+- **Documentation**: Check the `/docs` folder for detailed guides
+- **Issues**: Report bugs and feature requests via GitHub Issues
+- **Email**: support@resumevita.com
 
 ## 📄 License
 
 This project is proprietary software. All rights reserved.
 
-## 🆘 Support
-
-- **Issues**: Create GitHub issue for bugs
-- **Features**: Submit feature requests via GitHub
-- **Documentation**: Check `docs/` directory
-- **Contact**: [Your contact information]
-
 ---
 
-**Built with ❤️ by a Navy veteran who got tired of delivering groceries despite having engineering degrees.**
+**Resume Vita v2** - Transforming careers through AI-powered resume optimization.

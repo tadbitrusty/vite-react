@@ -36,7 +36,23 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(systemctl:*)",
-      "WebFetch(domain:resumevita.io)"
+      "WebFetch(domain:resumevita.io)",
+      "Bash(journalctl:*)",
+      "Bash(/snap/bin/node:*)",
+      "Bash(/snap/bin/npm --version)",
+      "Bash(/snap/bin/npm run dev)",
+      "Bash(ss:*)",
+      "Bash(ls -la dev.log)",
+      "Bash(cat dev.log)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm test)",
+      "Bash(yarn install)",
+      "Bash(pnpm install:*)",
+      "Bash(pgrep:*)",
+      "Bash(git checkout:*)",
+      "Bash(cp:*)",
+      "Bash(git rm:*)",
+      "Bash(true)"
     ],
     "deny": []
   }
