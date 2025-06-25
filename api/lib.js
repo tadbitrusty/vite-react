@@ -214,9 +214,46 @@ async function processTemplate(templateType, resumeData) {
 }
 
 async function generateResumePDF(resumeData, template) {
-  // Simple PDF placeholder
-  const content = `Resume for ${resumeData.personalInfo?.name || 'User'}\nTemplate: ${template}\nGenerated: ${new Date().toISOString()}`;
-  return Buffer.from(content, 'utf-8');
+  // Create a proper formatted resume text that looks professional
+  const { personalInfo, processedContent } = resumeData;
+  
+  let resumeText = `${personalInfo.name || 'Your Name'}\n`;
+  resumeText += `${personalInfo.email || ''} | ${personalInfo.phone || ''} | ${personalInfo.location || ''}\n`;
+  if (personalInfo.linkedin) {
+    resumeText += `${personalInfo.linkedin}\n`;
+  }
+  resumeText += '\n';
+  
+  if (processedContent.summary) {
+    resumeText += 'PROFESSIONAL SUMMARY\n';
+    resumeText += `${processedContent.summary}\n\n`;
+  }
+  
+  if (processedContent.experience) {
+    resumeText += 'PROFESSIONAL EXPERIENCE\n';
+    resumeText += `${processedContent.experience}\n\n`;
+  }
+  
+  if (processedContent.education) {
+    resumeText += 'EDUCATION\n';
+    resumeText += `${processedContent.education}\n\n`;
+  }
+  
+  if (processedContent.skills) {
+    resumeText += 'SKILLS\n';
+    resumeText += `${processedContent.skills}\n\n`;
+  }
+  
+  if (processedContent.certifications) {
+    resumeText += 'CERTIFICATIONS\n';
+    resumeText += `${processedContent.certifications}\n\n`;
+  }
+  
+  resumeText += '\n---\n';
+  resumeText += `Resume optimized by Resume Vita - ${new Date().toLocaleDateString()}\n`;
+  resumeText += 'Copy this text into Word/Google Docs and format as needed.\n';
+  
+  return Buffer.from(resumeText, 'utf-8');
 }
 
 // Database stubs - implement these based on your actual database
