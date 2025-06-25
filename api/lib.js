@@ -214,22 +214,30 @@ async function processTemplate(templateType, resumeData) {
 }
 
 async function generateResumePDF(resumeData, template, claudeResponse = '') {
-  console.log('DEBUG - claudeResponse length:', claudeResponse.length);
-  console.log('DEBUG - claudeResponse preview:', claudeResponse.substring(0, 200));
-  console.log('DEBUG - resumeData:', JSON.stringify(resumeData, null, 2));
+  console.log('=== PDF GENERATION DEBUG ===');
+  console.log('claudeResponse length:', claudeResponse?.length || 0);
+  console.log('claudeResponse type:', typeof claudeResponse);
+  console.log('claudeResponse preview:', claudeResponse?.substring(0, 300) || 'NO CLAUDE RESPONSE');
+  console.log('resumeData keys:', Object.keys(resumeData || {}));
+  console.log('template:', template);
   
   let resumeText = '';
+  let contentSource = 'unknown';
   
-  // ALWAYS use Claude response if we have it - skip the broken parsing
-  if (claudeResponse && claudeResponse.length > 100) {
-    console.log('DEBUG - Using Claude response directly');
-    resumeText = claudeResponse;
-  } else {
-    // Try parsed data as backup
+  // PRIORITY 1: Use Claude response if available and substantial
+  if (claudeResponse && typeof claudeResponse === 'string' && claudeResponse.trim().length > 50) {
+    console.log('✅ Using Claude response as primary content');
+    resumeText = claudeResponse.trim();
+    contentSource = 'claude_response';
+  } 
+  // PRIORITY 2: Try parsed data from resumeData
+  else if (resumeData && resumeData.personalInfo && resumeData.processedContent) {
+    console.log('⚠️ Claude response insufficient, using parsed data');
     const { personalInfo, processedContent } = resumeData;
     
-    if (personalInfo && (personalInfo.name || personalInfo.email)) {
-      resumeText = `${personalInfo.name || 'Your Name'}\n`;
+    // Build resume from parsed components
+    if (personalInfo.name) {
+      resumeText = `${personalInfo.name}\n`;
       resumeText += `${personalInfo.email || ''} | ${personalInfo.phone || ''} | ${personalInfo.location || ''}\n`;
       if (personalInfo.linkedin) {
         resumeText += `${personalInfo.linkedin}\n`;
@@ -260,17 +268,44 @@ async function generateResumePDF(resumeData, template, claudeResponse = '') {
         resumeText += 'CERTIFICATIONS\n';
         resumeText += `${processedContent.certifications}\n\n`;
       }
+      
+      contentSource = 'parsed_data';
     } else {
-      console.log('DEBUG - No good data found, using fallback message');
-      resumeText = 'Resume content could not be generated. Please try again or contact support.';
+      console.log('❌ Parsed data insufficient');
+      resumeText = createErrorContent('Parsed resume data is incomplete');
+      contentSource = 'error_parsed_incomplete';
     }
+  } 
+  // FALLBACK: Error content
+  else {
+    console.log('❌ No valid content found - creating error resume');
+    resumeText = createErrorContent('No resume content available');
+    contentSource = 'error_no_content';
   }
   
+  // Add footer
   resumeText += '\n\n---\n';
   resumeText += `Resume optimized by Resume Vita - ${new Date().toLocaleDateString()}\n`;
+  resumeText += `Content source: ${contentSource}\n`;
   resumeText += 'Copy this text into Word/Google Docs and format as needed.\n';
   
+  console.log('Final resume length:', resumeText.length);
+  console.log('Content source used:', contentSource);
+  console.log('=== END PDF DEBUG ===');
+  
   return Buffer.from(resumeText, 'utf-8');
+}
+
+function createErrorContent(errorMsg) {
+  return `RESUME GENERATION ERROR
+
+${errorMsg}
+
+This indicates a technical issue with resume processing.
+Please try again or contact support if the problem persists.
+
+Support: Reply to the resume email for assistance.
+`;
 }
 
 // Database stubs - implement these based on your actual database
