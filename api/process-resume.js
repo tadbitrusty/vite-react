@@ -441,6 +441,16 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // TEMPORARY MAINTENANCE MODE - REMOVE WHEN FIXED
+    return res.status(503).json({
+      success: false,
+      error: 'Service temporarily unavailable for maintenance',
+      message: 'We are currently fixing an issue with PDF generation. Please check back in a few hours.',
+      error_code: 'MAINTENANCE_MODE',
+      timestamp: new Date().toISOString(),
+      request_id: requestId
+    });
+    
     // Set security headers
     security.setHeaders(req, res);
     
