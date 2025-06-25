@@ -213,40 +213,51 @@ async function processTemplate(templateType, resumeData) {
   return resumeData;
 }
 
-async function generateResumePDF(resumeData, template) {
+async function generateResumePDF(resumeData, template, claudeResponse = '') {
   // Create a proper formatted resume text that looks professional
   const { personalInfo, processedContent } = resumeData;
   
-  let resumeText = `${personalInfo.name || 'Your Name'}\n`;
-  resumeText += `${personalInfo.email || ''} | ${personalInfo.phone || ''} | ${personalInfo.location || ''}\n`;
-  if (personalInfo.linkedin) {
-    resumeText += `${personalInfo.linkedin}\n`;
-  }
-  resumeText += '\n';
+  console.log('DEBUG - resumeData:', JSON.stringify(resumeData, null, 2));
   
-  if (processedContent.summary) {
-    resumeText += 'PROFESSIONAL SUMMARY\n';
-    resumeText += `${processedContent.summary}\n\n`;
-  }
+  let resumeText = '';
   
-  if (processedContent.experience) {
-    resumeText += 'PROFESSIONAL EXPERIENCE\n';
-    resumeText += `${processedContent.experience}\n\n`;
-  }
-  
-  if (processedContent.education) {
-    resumeText += 'EDUCATION\n';
-    resumeText += `${processedContent.education}\n\n`;
-  }
-  
-  if (processedContent.skills) {
-    resumeText += 'SKILLS\n';
-    resumeText += `${processedContent.skills}\n\n`;
-  }
-  
-  if (processedContent.certifications) {
-    resumeText += 'CERTIFICATIONS\n';
-    resumeText += `${processedContent.certifications}\n\n`;
+  // If we have proper parsed data, use it
+  if (personalInfo && (personalInfo.name || personalInfo.email)) {
+    resumeText = `${personalInfo.name || 'Your Name'}\n`;
+    resumeText += `${personalInfo.email || ''} | ${personalInfo.phone || ''} | ${personalInfo.location || ''}\n`;
+    if (personalInfo.linkedin) {
+      resumeText += `${personalInfo.linkedin}\n`;
+    }
+    resumeText += '\n';
+    
+    if (processedContent.summary) {
+      resumeText += 'PROFESSIONAL SUMMARY\n';
+      resumeText += `${processedContent.summary}\n\n`;
+    }
+    
+    if (processedContent.experience) {
+      resumeText += 'PROFESSIONAL EXPERIENCE\n';
+      resumeText += `${processedContent.experience}\n\n`;
+    }
+    
+    if (processedContent.education) {
+      resumeText += 'EDUCATION\n';
+      resumeText += `${processedContent.education}\n\n`;
+    }
+    
+    if (processedContent.skills) {
+      resumeText += 'SKILLS\n';
+      resumeText += `${processedContent.skills}\n\n`;
+    }
+    
+    if (processedContent.certifications) {
+      resumeText += 'CERTIFICATIONS\n';
+      resumeText += `${processedContent.certifications}\n\n`;
+    }
+  } else {
+    // Fallback: use the raw Claude response if parsing failed
+    console.log('DEBUG - Using raw Claude response as fallback');
+    resumeText = claudeResponse || 'Resume content could not be parsed.';
   }
   
   resumeText += '\n---\n';

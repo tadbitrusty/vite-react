@@ -317,7 +317,7 @@ async function createPaymentSession(template, email, resumeData) {
 }
 
 // Send resume via email with PDF attachment
-async function sendResumeEmail(email, processedTemplate, template, fileName, resumeData) {
+async function sendResumeEmail(email, processedTemplate, template, fileName, resumeData, claudeResponse = '') {
   const templateNames = {
     'ats-optimized': 'ATS Optimized',
     'entry-clean': 'Modern Clean',
@@ -330,7 +330,7 @@ async function sendResumeEmail(email, processedTemplate, template, fileName, res
   const isFreeTier = template === 'ats-optimized';
   
   // Generate PDF from the processed template and resume data
-  const pdfBuffer = await generateResumePDF(resumeData, template);
+  const pdfBuffer = await generateResumePDF(resumeData, template, claudeResponse);
   const pdfFileName = `${fileName.replace(/\.[^/.]+$/, '')}_${template}.pdf`;
 
   const emailContent = `
@@ -554,7 +554,7 @@ module.exports = async function handler(req, res) {
         const processedTemplate = await processTemplate(template, resumeData);
 
         // Send email with processed template and PDF attachment
-        await sendResumeEmail(email, processedTemplate, template, fileName, resumeData);
+        await sendResumeEmail(email, processedTemplate, template, fileName, resumeData, claudeResponse);
 
         // Update user record
         await upsertUser(email, {
