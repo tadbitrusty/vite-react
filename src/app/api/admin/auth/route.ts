@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { getAdminSession, createAdminSession, deleteAdminSession } from '../../../lib/supabase';
 
 // Admin credentials (in production, store in secure database)
 const ADMIN_CREDENTIALS = {
@@ -29,6 +30,11 @@ function generateToken(username: string): string {
     JWT_SECRET,
     { expiresIn: '24h' }
   );
+}
+
+// Generate secure token for database storage
+function generateSecureToken(): string {
+  return `admin_${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
 }
 
 // Verify JWT token
@@ -74,8 +80,23 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      // Generate token
-      const token = generateToken(username);
+      // Generate tokens
+      const jwtToken = generateToken(username);
+      const secureToken = generateSecureToken();
+      
+      // Store session in database
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+      const adminSession = await createAdminSession(username, secureToken, expiresAt);
+      
+      if (!adminSession) {
+        console.error('[ADMIN_AUTH] Failed to create admin session in database');
+        return NextResponse.json(
+          { success: false, message: 'Failed to create session' },
+          { status: 500 }
+        );
+      }
+      
+      console.log(`[ADMIN_AUTH] Admin session created for: ${username}`);
       
       // Set secure cookie
       const response = NextResponse.json({
@@ -88,7 +109,7 @@ export async function POST(request: NextRequest) {
         }
       });
       
-      response.cookies.set('admin-token', token, {
+      response.cookies.set('admin-token', secureToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -103,31 +124,47 @@ export async function POST(request: NextRequest) {
                    request.headers.get('authorization')?.replace('Bearer ', '');
       
       if (!token) {
+        console.log('[ADMIN_AUTH] No token provided for verification');
         return NextResponse.json(
           { success: false, message: 'No token provided' },
           { status: 401 }
         );
       }
       
-      const decoded = verifyAdminToken(token);
+      // Check token in database
+      const adminSession = await getAdminSession(token);
       
-      if (!decoded) {
+      if (!adminSession) {
+        console.log('[ADMIN_AUTH] Invalid or expired admin session');
         return NextResponse.json(
-          { success: false, message: 'Invalid token' },
+          { success: false, message: 'Invalid or expired session' },
           { status: 401 }
         );
       }
       
+      console.log(`[ADMIN_AUTH] Valid admin session verified for: ${adminSession.username}`);
+      
       return NextResponse.json({
         success: true,
         user: {
-          username: decoded.username,
-          role: decoded.role
+          username: adminSession.username,
+          role: 'admin'
         }
       });
     }
     
     if (action === 'logout') {
+      const token = request.cookies.get('admin-token')?.value ||
+                   request.headers.get('authorization')?.replace('Bearer ', '');
+      
+      if (token) {
+        // Delete session from database
+        const deleted = await deleteAdminSession(token);
+        if (deleted) {
+          console.log('[ADMIN_AUTH] Admin session deleted from database');
+        }
+      }
+      
       const response = NextResponse.json({
         success: true,
         message: 'Logged out successfully'
@@ -154,36 +191,43 @@ export async function POST(request: NextRequest) {
 // GET: Check authentication status
 export async function GET(request: NextRequest) {
   try {
+    console.log('[ADMIN_AUTH] GET auth check request');
+    
     const token = request.cookies.get('admin-token')?.value ||
                  request.headers.get('authorization')?.replace('Bearer ', '');
     
     if (!token) {
+      console.log('[ADMIN_AUTH] No token provided for auth check');
       return NextResponse.json(
         { success: false, message: 'Not authenticated' },
         { status: 401 }
       );
     }
     
-    const decoded = verifyAdminToken(token);
+    // Check token in database
+    const adminSession = await getAdminSession(token);
     
-    if (!decoded) {
+    if (!adminSession) {
+      console.log('[ADMIN_AUTH] Invalid or expired admin session in auth check');
       return NextResponse.json(
-        { success: false, message: 'Invalid token' },
+        { success: false, message: 'Invalid or expired session' },
         { status: 401 }
       );
     }
+    
+    console.log(`[ADMIN_AUTH] Valid admin session confirmed for: ${adminSession.username}`);
     
     return NextResponse.json({
       success: true,
       authenticated: true,
       user: {
-        username: decoded.username,
-        role: decoded.role
+        username: adminSession.username,
+        role: 'admin'
       }
     });
     
   } catch (error) {
-    console.error('Admin auth check error:', error);
+    console.error('[ADMIN_AUTH] Auth check error:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

@@ -55,7 +55,11 @@
       "Bash(true)",
       "Bash(hash -r)",
       "Bash(export:*)",
-      "Bash(NODE_OPTIONS=\"--max-old-space-size=2048\" npm run build)"
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=2048\" npm run build)",
+      "Bash(npx next lint:*)",
+      "Bash(npx next:*)",
+      "Bash(env)",
+      "Bash(tsc --version)"
     ],
     "deny": []
   }
