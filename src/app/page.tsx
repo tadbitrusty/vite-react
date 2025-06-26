@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { ResumeBuilder } from '@/components/resume-builder'
 
 export default function Home() {
