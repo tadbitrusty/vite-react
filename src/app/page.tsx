@@ -156,15 +156,10 @@ export default function Home() {
           </p>
           <div className="max-w-3xl mx-auto mb-8">
             <p className="text-gray-300 text-lg mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
-              I was Navy aviation ordnance - I made things go boom and understood complex systems others missed. 
-              Now I have engineering degrees and real experience, but I'm delivering groceries because ATS systems kill qualified candidates before humans ever see them.
-            </p>
-            <p className="text-gray-300 text-lg mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
-              I was dead in the water - overqualified for grunt work, 'under-qualified' for engineering roles I could do in my sleep. 
-              So I built Resume Vita to bring dead resumes back to life and get qualified people past these broken filters.
+              I'm an engineer with multiple degrees and skills gathered over a lifetime. My original goal was to help working people succeed. But I discovered that HR systems are designed to filter out qualified candidates - 75% get passed over because their resume doesn't have the exact keywords.
             </p>
             <p className="text-[#4a90a4] text-lg font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>
-              Your resume isn't garbage - it's just suffocating under systems that don't understand what you bring to the table.
+              So I built this tool to give working professionals that extra edge, without having to rewrite your resume for every job. I made it as easy and affordable as possible, because everyone deserves a fair shot at their dream job.
             </p>
           </div>
         </header>
