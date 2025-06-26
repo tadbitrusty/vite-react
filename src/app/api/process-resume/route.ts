@@ -294,8 +294,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if this is a first-time free request
-    if (isFirstTimeFlow && template === 'ats-optimized') {
+    // Check user eligibility using tracking system
+    const trackingResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/user-tracking`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-forwarded-for': request.headers.get('x-forwarded-for') || '',
+        'user-agent': request.headers.get('user-agent') || '',
+        'referer': request.headers.get('referer') || ''
+      },
+      body: JSON.stringify({
+        email,
+        action: 'check_eligibility'
+      })
+    });
+
+    const trackingResult = await trackingResponse.json();
+
+    if (!trackingResult.success) {
+      return NextResponse.json(
+        { success: false, message: 'Unable to verify user eligibility' },
+        { status: 500 }
+      );
+    }
+
+    const { session, eligibility } = trackingResult;
+
+    // Check if user can use free service or if they have special privileges
+    if (template === 'ats-optimized') {
+      if (!eligibility.canUseFree) {
+        return NextResponse.json({
+          success: false,
+          message: eligibility.reason || 'Free resume limit reached',
+          session: {
+            accountType: session.accountType,
+            freeResumesUsed: session.freeResumesUsed,
+            whitelistStatus: session.whitelistStatus
+          }
+        });
+      }
+
       try {
         // Process with Claude
         const claudeResponse = await processResumeWithClaude(resumeContent, jobDescription, template);
@@ -303,9 +341,28 @@ export async function POST(request: NextRequest) {
         // Send email with PDF
         await sendResumeEmail(email, claudeResponse, template, fileName);
 
+        // Record usage in tracking system
+        await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/user-tracking`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-forwarded-for': request.headers.get('x-forwarded-for') || '',
+            'user-agent': request.headers.get('user-agent') || ''
+          },
+          body: JSON.stringify({
+            email,
+            action: 'record_usage'
+          })
+        });
+
         return NextResponse.json({
           success: true,
           message: 'Resume processed and sent via email successfully!',
+          session: {
+            accountType: session.accountType,
+            freeResumesUsed: session.freeResumesUsed + 1,
+            whitelistStatus: session.whitelistStatus
+          },
           timestamp: new Date().toISOString()
         });
 
@@ -317,11 +374,31 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      // Premium templates require payment
+      // Premium templates - check for discounts
+      const discountPercent = session.discountPercent || 0;
+      const template_info = {
+        'entry-clean': { name: 'Premium Classic', price: 5.99 },
+        'tech-focus': { name: 'Tech Focus', price: 9.99 },
+        'professional-plus': { name: 'Premium Plus', price: 7.99 },
+        'executive-format': { name: 'Executive Format', price: 8.99 }
+      }[template] || { name: 'Premium Template', price: 9.99 };
+
+      const discountedPrice = discountPercent > 0 
+        ? (template_info.price * (1 - discountPercent / 100)).toFixed(2)
+        : template_info.price;
+
       return NextResponse.json({
         success: false,
         requires_payment: true,
         message: 'Premium templates require payment',
+        template: template_info.name,
+        originalPrice: template_info.price,
+        discountedPrice: parseFloat(discountedPrice),
+        discountPercent,
+        session: {
+          accountType: session.accountType,
+          whitelistStatus: session.whitelistStatus
+        },
         payment_url: '/payment' // Implement Stripe integration
       });
     }

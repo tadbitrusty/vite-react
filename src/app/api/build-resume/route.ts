@@ -267,28 +267,119 @@ export async function POST(request: NextRequest) {
 
     const tierInfo = RESUME_BUILDER_PRICING[tier as keyof typeof RESUME_BUILDER_PRICING];
 
-    // For now, we'll process directly (in production, this would go through Stripe first)
-    try {
-      // Build resume with Claude
-      const resumeContent = await buildResumeWithClaude({ personalInfo, summary, experience, education, skills }, tier);
-      
-      // Send email with PDF
-      await sendBuilderResumeEmail(personalInfo.email, resumeContent, tier, personalInfo);
+    // Check user eligibility and track usage
+    const trackingResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/user-tracking`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-forwarded-for': request.headers.get('x-forwarded-for') || '',
+        'user-agent': request.headers.get('user-agent') || '',
+        'referer': request.headers.get('referer') || ''
+      },
+      body: JSON.stringify({
+        email: personalInfo.email,
+        fullName: personalInfo.fullName,
+        action: 'check_eligibility'
+      })
+    });
 
-      return NextResponse.json({
-        success: true,
-        message: `${tierInfo.name} created and sent via email successfully!`,
-        amount: tierInfo.price,
-        tier: tierInfo.name,
-        timestamp: new Date().toISOString()
-      });
+    const trackingResult = await trackingResponse.json();
 
-    } catch (error) {
-      console.error('Error building resume:', error);
+    if (!trackingResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Failed to build resume. Please try again.' },
+        { success: false, message: 'Unable to verify user eligibility' },
         { status: 500 }
       );
+    }
+
+    const { session } = trackingResult;
+
+    // Resume Builder is a paid service, but check for admin/beta privileges
+    if (session.accountType === 'admin' || session.accountType === 'beta') {
+      // Admin and beta users get free access
+      try {
+        // Build resume with Claude
+        const resumeContent = await buildResumeWithClaude({ personalInfo, summary, experience, education, skills }, tier);
+        
+        // Send email with PDF
+        await sendBuilderResumeEmail(personalInfo.email, resumeContent, tier, personalInfo);
+
+        // Record usage
+        await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/user-tracking`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-forwarded-for': request.headers.get('x-forwarded-for') || '',
+            'user-agent': request.headers.get('user-agent') || ''
+          },
+          body: JSON.stringify({
+            email: personalInfo.email,
+            action: 'record_usage'
+          })
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: `${tierInfo.name} created and sent via email successfully! (Complimentary ${session.accountType} access)`,
+          amount: 0, // Free for admin/beta
+          tier: tierInfo.name,
+          session: {
+            accountType: session.accountType,
+            whitelistStatus: session.whitelistStatus
+          },
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        console.error('Error building resume:', error);
+        return NextResponse.json(
+          { success: false, message: 'Failed to build resume. Please try again.' },
+          { status: 500 }
+        );
+      }
+    } else {
+      // Regular users need to pay - in production this would integrate with Stripe
+      // For development, we'll process directly but show payment would be required
+      try {
+        // Build resume with Claude
+        const resumeContent = await buildResumeWithClaude({ personalInfo, summary, experience, education, skills }, tier);
+        
+        // Send email with PDF
+        await sendBuilderResumeEmail(personalInfo.email, resumeContent, tier, personalInfo);
+
+        // Record usage
+        await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/user-tracking`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-forwarded-for': request.headers.get('x-forwarded-for') || '',
+            'user-agent': request.headers.get('user-agent') || ''
+          },
+          body: JSON.stringify({
+            email: personalInfo.email,
+            action: 'record_usage'
+          })
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: `${tierInfo.name} created and sent via email successfully!`,
+          amount: tierInfo.price,
+          tier: tierInfo.name,
+          session: {
+            accountType: session.accountType,
+            whitelistStatus: session.whitelistStatus
+          },
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        console.error('Error building resume:', error);
+        return NextResponse.json(
+          { success: false, message: 'Failed to build resume. Please try again.' },
+          { status: 500 }
+        );
+      }
     }
 
   } catch (error) {

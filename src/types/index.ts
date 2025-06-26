@@ -60,3 +60,6 @@ export interface APIResponse<T = any> {
   timestamp: string;
   request_id: string;
 }
+
+// Re-export tracking types
+export * from './tracking';

@@ -3,6 +3,10 @@ export const API_ENDPOINTS = {
   PROCESS_RESUME: '/api/process-resume',
   BUILD_RESUME: '/api/build-resume',
   PARSE_RESUME: '/api/parse-resume',
+  USER_TRACKING: '/api/user-tracking',
+  ADMIN_AUTH: '/api/admin/auth',
+  ADMIN_WHITELIST: '/api/admin/whitelist',
+  ADMIN_USERS: '/api/admin/users',
   HEALTH: '/api/health',
   STRIPE_WEBHOOK: '/api/stripe-webhook'
 } as const;
