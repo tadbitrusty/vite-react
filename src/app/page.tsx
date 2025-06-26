@@ -193,7 +193,7 @@ export default function Home() {
               Build a professional resume from scratch in under an hour
             </p>
             <button
-              onClick={() => setCurrentView('builder')}
+              onClick={() => window.location.href = '/builder'}
               className="bg-gradient-to-r from-[#4a90a4] to-[#5ba0b5] text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center mx-auto space-x-2 transform hover:scale-105 transition-transform"
             >
               <Plus className="w-5 h-5" />
