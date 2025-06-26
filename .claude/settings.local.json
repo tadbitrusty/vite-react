@@ -52,13 +52,7 @@
       "Bash(git checkout:*)",
       "Bash(cp:*)",
       "Bash(git rm:*)",
-      "Bash(true)",
-      "Bash(git branch:*)",
-      "Bash(npx next:*)",
-      "Bash(DEBUG=*)",
-      "Bash(npx eslint:*)",
-      "Bash(./node_modules/.bin/next:*)",
-      "Bash(npm config get:*)"
+      "Bash(true)"
     ],
     "deny": []
   }
