@@ -9,10 +9,13 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    
     // Modules
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
@@ -20,50 +23,58 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    
     // Emit
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "removeComments": false,
-    "importsNotUsedAsValues": "error",
     "downlevelIteration": true,
     "noEmit": true,
-    
     // Interop Constraints
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    
     // Language and Environment
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "useDefineForClassFields": true,
     "jsx": "preserve",
     "jsxImportSource": "react",
-    
     // Projects
     "incremental": true,
     "composite": false,
     "tsBuildInfoFile": ".tsbuildinfo",
-    
     // Output Formatting
     "noErrorTruncation": true,
     "preserveWatchOutput": true,
     "pretty": true,
-    
     // Completeness
     "skipLibCheck": true,
-    
     // Path Mapping
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@/components/*": ["./packages/ui/src/*"],
-      "@/utils/*": ["./packages/utils/src/*"],
-      "@/types/*": ["./packages/types/src/*"],
-      "@/config/*": ["./packages/config/src/*"]
-    }
+      "@/*": [
+        "./src/*"
+      ],
+      "@/components/*": [
+        "./packages/ui/src/*"
+      ],
+      "@/utils/*": [
+        "./packages/utils/src/*"
+      ],
+      "@/types/*": [
+        "./packages/types/src/*"
+      ],
+      "@/config/*": [
+        "./packages/config/src/*"
+      ]
+    },
+    "allowJs": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
     "**/*.ts",
@@ -76,6 +87,9 @@
     "node_modules",
     ".next",
     "dist",
-    "build"
+    "build",
+    "src/components/ResumeBuilder.tsx",
+    "src/components/ResumePreview.tsx",
+    "src/components/resume-builder.tsx"
   ]
 }

@@ -3,7 +3,8 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { UserFlowType, TemplateType } from '@/lib/types';
+type UserFlowType = 'first-time' | 'returning';
+type TemplateType = 'ats-optimized' | 'premium-classic' | 'tech-focus' | 'premium-plus' | 'executive';
 
 interface AppState {
   // UI State

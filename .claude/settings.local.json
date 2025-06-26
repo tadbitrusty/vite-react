@@ -52,7 +52,10 @@
       "Bash(git checkout:*)",
       "Bash(cp:*)",
       "Bash(git rm:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(hash -r)",
+      "Bash(export:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=2048\" npm run build)"
     ],
     "deny": []
   }
