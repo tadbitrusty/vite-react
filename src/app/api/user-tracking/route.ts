@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserSession, WhitelistEntry, DEFAULT_WHITELIST, AbusePattern } from '@/types/tracking';
+import { UserSession, WhitelistEntry, DEFAULT_WHITELIST, AbusePattern } from '../../../types/tracking';
 
 // In production, this would use a proper database (Supabase, PostgreSQL, etc.)
 // For now, using in-memory storage for rapid development

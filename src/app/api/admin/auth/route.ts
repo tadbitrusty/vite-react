@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as bcrypt from 'bcryptjs';
-import * as jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 // Admin credentials (in production, store in secure database)
 const ADMIN_CREDENTIALS = {

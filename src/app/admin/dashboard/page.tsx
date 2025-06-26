@@ -7,7 +7,7 @@ import {
   Mail, MapPin, Globe, Clock, Flag, CheckCircle,
   LogOut, BarChart3, Settings, Download
 } from 'lucide-react';
-import { API_ENDPOINTS } from '@/constants';
+import { API_ENDPOINTS } from '../../../constants';
 
 interface User {
   id: string;

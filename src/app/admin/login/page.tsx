@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, AlertCircle, CheckCircle } from 'lucide-react';
-import { API_ENDPOINTS } from '@/constants';
+import { API_ENDPOINTS } from '../../../constants';
 
 interface NotificationProps {
   type: 'success' | 'error';
