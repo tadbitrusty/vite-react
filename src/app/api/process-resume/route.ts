@@ -19,28 +19,87 @@ function initializeServices() {
   }
 }
 
-// Process resume with Claude and generate actual PDF
+// Get template-specific guidance
+function getTemplatePromptEnhancements(templateId: string) {
+  const enhancements = {
+    'ats-optimized': {
+      type: 'ATS Optimized',
+      target: 'Applicant Tracking Systems and HR professionals',
+      guidance: 'Focus on keyword optimization and standard formatting. Use industry-standard section headers and bullet points.'
+    },
+    'entry-clean': {
+      type: 'Premium Classic',
+      target: 'Entry to mid-level professionals',
+      guidance: 'Clean modern design with emphasis on education and early career achievements.'
+    },
+    'tech-focus': {
+      type: 'Tech Focus',
+      target: 'IT professionals and engineers',
+      guidance: 'Highlight technical skills, projects, and quantifiable achievements. Include programming languages and technical certifications prominently.'
+    },
+    'professional-plus': {
+      type: 'Premium Plus',
+      target: 'Career growth and advancement',
+      guidance: 'Showcase leadership experience and career progression. Emphasize management skills and strategic contributions.'
+    },
+    'executive-format': {
+      type: 'Executive Format',
+      target: 'Senior leadership and C-level positions',
+      guidance: 'Emphasize strategic impact, board experience, and P&L responsibility. Focus on high-level achievements and industry influence.'
+    }
+  };
+  
+  return enhancements[templateId as keyof typeof enhancements] || enhancements['ats-optimized'];
+}
+
+// Process resume with Claude using ORIGINAL WORKING PROMPT
 async function processResumeWithClaude(resumeContent: string, jobDescription: string, template: string) {
-  const prompt = `You are an expert resume writer and ATS optimization specialist. Analyze the provided resume and job description, then create an optimized resume that will pass ATS systems and appeal to hiring managers.
+  const templateInfo = getTemplatePromptEnhancements(template);
+  
+  const prompt = `You are a master resume writer specializing in ATS optimization.
 
-IMPORTANT: Return your response as a properly formatted resume with clear sections. Use this EXACT structure:
+TEMPLATE TYPE: ${templateInfo.type}
+TARGET AUDIENCE: ${templateInfo.target}
+TEMPLATE GUIDANCE: ${templateInfo.guidance}
 
-${resumeContent.slice(0, 100)}...
+INSTRUCTIONS:
+- Do NOT lie or over-embellish
+- Create an ATS-optimized resume that matches the job requirements
+- Use keywords from the job description naturally
+- Maintain professional formatting appropriate for ${templateInfo.type}
+- Keep the same contact information from the original resume
+- Focus on relevant experience for this specific job
+- Return structured content in the following format:
 
-PERSONAL INFORMATION:
-[Extract and clean up: Name, Email, Phone, Location, LinkedIn]
+PERSONAL INFO:
+Name: [Extract from original]
+Email: [Extract from original]  
+Phone: [Extract from original]
+Location: [Extract from original]
+LinkedIn: [Extract if available]
 
-PROFESSIONAL SUMMARY:
-[Write 3-4 sentences highlighting key qualifications that match the job]
+SUMMARY:
+[2-3 sentence professional summary tailored to the job]
 
-WORK EXPERIENCE:
-[List positions in reverse chronological order with quantified achievements]
+EXPERIENCE:
+[Format each job as:]
+Job Title - Company Name
+Date Range
+• Achievement-focused bullet point
+• Quantified accomplishment
+• Relevant skill demonstration
 
 EDUCATION:
-[Degrees, certifications, relevant coursework]
+[Format as:]
+Degree - Institution Name
+Date Range
+[Any relevant details]
 
 SKILLS:
-[Technical and soft skills relevant to the target role]
+[Categorized skills relevant to the job, separated by categories if applicable]
+
+CERTIFICATIONS:
+[If any exist in original resume]
 
 ORIGINAL RESUME:
 ${resumeContent}
@@ -48,7 +107,7 @@ ${resumeContent}
 JOB DESCRIPTION:
 ${jobDescription}
 
-Create a professional, ATS-optimized resume following the exact format above.`;
+Return the structured resume content following the exact format above:`;
 
   if (!anthropic) throw new Error('Anthropic client not initialized');
   
