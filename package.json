@@ -1,35 +1,37 @@
 {
-  "name": "resume-vita-v2",
+  "name": "@resume-vita/web",
   "version": "2.0.0",
   "private": true,
-  "description": "Enterprise-grade ATS resume optimization platform",
-  "workspaces": [
-    "apps/*",
-    "packages/*",
-    "tools/*"
-  ],
-  "packageManager": "pnpm@8.15.0",
-  "engines": {
-    "node": ">=18.17.0",
-    "pnpm": ">=8.0.0"
-  },
+  "description": "Resume Vita frontend application",
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "type-check": "turbo run type-check",
-    "test": "turbo run test",
-    "test:e2e": "turbo run test:e2e",
-    "clean": "turbo run clean",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "db:push": "turbo run db:push",
-    "db:migrate": "turbo run db:migrate",
-    "db:studio": "turbo run db:studio"
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next dist .turbo"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.3.4",
+    "next": "^14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.50.1",
+    "zod": "^3.22.4",
+    "lucide-react": "^0.344.0",
+    "framer-motion": "^11.0.6",
+    "clsx": "^2.1.0",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@turbo/gen": "^1.12.4",
-    "turbo": "^1.12.4",
-    "prettier": "^3.2.5",
+    "@types/node": "^20.11.19",
+    "@types/react": "^18.2.57",
+    "@types/react-dom": "^18.2.19",
+    "@next/eslint-config-next": "^14.1.0",
+    "autoprefixer": "^10.4.17",
+    "eslint": "^8.56.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
     "typescript": "^5.4.2"
   }
 }
