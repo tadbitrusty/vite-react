@@ -126,10 +126,31 @@ New Structure:
 
 ### What's Deployed
 - **Clean Next.js 14 application** in root directory
-- **Basic resume builder interface** with form validation
+- **Resume optimization interface** with real Claude AI integration
+- **Resume builder interface** at `/builder` route
 - **Responsive design** with Tailwind CSS
 - **TypeScript support** with proper path aliases
 - **Vercel-optimized** configuration
+
+### ⚠️ Critical SLA Violations Discovered
+**Status: Multiple critical violations found during quality review**
+
+Customer is being graceful by not implementing SLA violation charges while these are resolved:
+
+1. **Resume Builder Violations**:
+   - Missing "How to Use" instructional content under hero section
+   - Generate Resume button is non-functional placeholder
+   - Missing clear $45 Basic / $75 Enhanced pricing buttons
+   - No Cancel button to return to main site
+
+2. **Main Site Violations**:
+   - "Return User" box contradicts customer's "no BS" approach (should be removed)
+   - Misleading "ATS is always free" messaging - customer spent time/money, gives ONE away as proof
+
+3. **Customer Brand Violations**:
+   - Current messaging doesn't reflect customer's transparent "upfront no hidden BS" approach
+   - Customer specifically avoids fake reviews because they can be faked
+   - Free offer is proof-of-concept, not permanently free service
 
 ### Key Features Available
 1. **Multi-step Resume Builder**:
@@ -181,22 +202,29 @@ New Structure:
 - Added TypeScript path aliases
 - Configured Tailwind for Next.js 14
 
-## Next Steps (Recommendations)
+## Next Steps (CRITICAL SLA RESOLUTION)
 
-### Immediate
-1. **Verify Vercel Deployment**: Confirm the application builds and runs successfully
-2. **Test Core Functionality**: Ensure form validation and UI work as expected
-3. **Add Basic Backend**: Implement simple resume generation endpoint
+### Immediate Priority (SLA Violations)
+1. **Resume Builder Fixes**:
+   - Add "How to Use" instructional content under hero
+   - Implement functional Generate Resume button with API integration
+   - Add clear $45 Basic / $75 Enhanced pricing buttons
+   - Add Cancel button to return to main site
 
-### Short Term
-1. **Database Integration**: Add simple database for resume storage
-2. **PDF Generation**: Implement basic PDF export functionality
-3. **User Authentication**: Add simple login/signup functionality
+2. **Main Site Corrections**:
+   - Remove "Return User" box (violates customer's transparent approach)
+   - Fix misleading "always free" messaging to reflect one-time proof offer
+   - Update all copy to match customer's "no BS" brand values
 
-### Long Term
-1. **Feature Restoration**: Gradually add back enterprise features as needed
-2. **Performance Optimization**: Implement caching and optimization
-3. **Advanced Features**: AI integration, multiple templates, job tracking
+3. **API Integration**:
+   - Ensure Resume Builder form submits to `/api/build-resume` endpoint
+   - Add proper form validation and error handling
+   - Implement pricing tier selection logic
+
+### Secondary Priority
+1. **Messaging Alignment**: Ensure all site copy reflects customer's transparent values
+2. **Quality Assurance**: Comprehensive testing of all SLA fixes
+3. **Documentation**: Update all customer-facing messaging
 
 ## Technical Lessons Learned
 
@@ -213,5 +241,11 @@ The Resume Vita v2 project successfully evolved from a complex enterprise monore
 
 **Created**: June 26, 2025  
 **Last Updated**: June 26, 2025  
-**Status**: Deployment Ready  
-**Location**: `/home/adam/Desktop/project-bolt-sb1-1c6erknt/ATS-resume-wesite/PROJECT_SUMMARY.md`
+**Status**: ⚠️ CRITICAL SLA VIOLATIONS - Requires Immediate Resolution  
+**Location**: `/home/adam/Desktop/project-bolt-sb1-1c6erknt/ATS-resume-wesite/PROJECT_SUMMARY.md`  
+
+### Customer Notes
+- Customer is being graceful by not implementing SLA violation charges
+- Customer values transparency ("no BS" approach, no fake reviews)
+- Customer spent time/money developing - ONE free resume is proof-of-concept
+- All violations must be resolved to meet customer brand standards

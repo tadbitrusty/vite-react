@@ -44,7 +44,7 @@ export default function Home() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState('');
   const [email, setEmail] = useState('');
-  const [isFirstTime, setIsFirstTime] = useState(true);
+  const [isFirstTime, setIsFirstTime] = useState(true); // Always true now - aligned with transparent brand approach
   const [selectedTemplate, setSelectedTemplate] = useState('ats-optimized');
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -169,17 +169,17 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Anti-BS Section */}
+        {/* Transparent Approach Section */}
         <div className="text-center mb-12 p-8 card-gradient rounded-lg">
           <h2 className="text-white text-2xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Skip the Fake 5-Star Reviews
+            No BS. No Fake Reviews. Just Proof.
           </h2>
           <p className="text-gray-300 text-lg mb-4">
-            Go to any site that wants to sell you something, and this is where you see five star reviews. 
-            I don't trust them either.
+            I spent time and money developing this tool. Instead of fake testimonials, 
+            I'm giving you one resume for free as proof it works.
           </p>
           <p className="text-[#4a90a4] text-lg font-medium">
-            This is why I'm giving you one for free. See the proof for yourself.
+            See the quality for yourself. Then decide if it's worth paying for premium templates.
           </p>
         </div>
 
@@ -202,8 +202,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* User Flow Selection */}
-        <UserFlowSelector isFirstTime={isFirstTime} setIsFirstTime={setIsFirstTime} />
+        {/* User Flow Selection - REMOVED per SLA brand alignment requirements */}
           
         {/* Template Selection */}
         <TemplateSelector 
@@ -288,7 +287,7 @@ export default function Home() {
               <FileText className="w-6 h-6" />
               <span className="font-bold" style={{ fontFamily: 'Inter, sans-serif' }}>
                 {processing ? 'WORKING MAGIC...' : 
-                 isFirstTime ? 'GET FREE RESUME' : 
+                 selectedTemplate === 'ats-optimized' ? 'GET FREE PROOF RESUME' : 
                  `PAY $${RESUME_TEMPLATES.find(t => t.id === selectedTemplate)?.price || 0} & PROCESS`}
               </span>
             </button>

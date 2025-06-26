@@ -36,7 +36,7 @@ export function TemplateSelector({
         </h3>
         
         <p className="text-gray-300 text-sm mb-6 text-center" style={{ fontFamily: 'Inter, sans-serif' }}>
-          {isFirstTime ? "Get the ATS Optimized template FREE, or choose any premium template!" : 'All templates available with instant payment processing'}
+          Get one FREE ATS Optimized resume as proof of quality, or choose any premium template!
         </p>
         
         {/* 1x5 Template Layout */}
@@ -57,10 +57,10 @@ export function TemplateSelector({
                 }`}
                 onClick={() => !isDisabled && onTemplateChange(template.id)}
               >
-                {/* FREE badge for first-time users */}
-                {isFirstTime && template.id === 'ats-optimized' && (
+                {/* FREE badge for ATS template (proof offer) */}
+                {template.id === 'ats-optimized' && (
                   <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-                    FREE
+                    FREE PROOF
                   </div>
                 )}
                 
@@ -99,10 +99,7 @@ export function TemplateSelector({
         
         <div className="text-center mt-6">
           <p className="text-gray-400 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
-            {isFirstTime 
-              ? "ATS Optimized is always free. Premium templates include advanced AI optimization and professional styling."
-              : "All premium templates include advanced AI optimization and professional styling."
-            }
+            One FREE ATS Optimized resume as proof of quality. Premium templates include advanced AI optimization and professional styling.
           </p>
         </div>
       </div>
