@@ -142,6 +142,9 @@ Return ONLY the clean, final resume content with no instructional text:`;
     // Handle data URL format: data:mime/type;base64,actualdata
     if (resumeFileBase64.startsWith('data:')) {
       const parts = resumeFileBase64.split(',');
+      if (parts.length !== 2) {
+        throw new Error('Invalid data URL format');
+      }
       base64Data = parts[1];
       const header = parts[0]; // "data:application/pdf;base64"
       mimeType = header.split(';')[0].split(':')[1]; // Extract "application/pdf"
@@ -150,9 +153,21 @@ Return ONLY the clean, final resume content with no instructional text:`;
       base64Data = resumeFileBase64;
       mimeType = 'application/pdf';
     }
+    
+    // Clean and validate base64 data
+    base64Data = base64Data.trim();
+    
+    // Validate base64 format (should only contain A-Z, a-z, 0-9, +, /, =)
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(base64Data)) {
+      console.error('[CLAUDE] Invalid base64 characters found');
+      console.error('[CLAUDE] Base64 preview:', base64Data.substring(0, 100));
+      throw new Error('File contains invalid base64 encoding');
+    }
+    
   } catch (error) {
     console.error('[CLAUDE] Error parsing base64 data:', error);
-    throw new Error('Invalid file format');
+    throw new Error('Invalid file format - please try uploading the file again');
   }
   
   console.log(`[CLAUDE] Sending file to Claude - MIME type: ${mimeType || 'unknown'}, Base64 size: ${base64Data?.length || 0}`);
@@ -179,25 +194,20 @@ Return ONLY the clean, final resume content with no instructional text:`;
   
   console.log(`[CLAUDE] Using content type: ${contentType}, MIME type: ${validMimeType}`);
   
+  // Try a simpler approach - include base64 in text prompt
+  const fullPrompt = `${prompt}
+
+ATTACHED FILE (Base64 ${validMimeType}):
+${base64Data}
+
+Please read and parse the attached file above and create the optimized resume following all the identity preservation rules.`;
+
   const response = await anthropic.messages.create({
     model: "claude-3-5-sonnet-20241022", 
     max_tokens: 4000,
     messages: [{ 
       role: "user", 
-      content: [
-        {
-          type: "text",
-          text: prompt
-        },
-        {
-          type: contentType,
-          source: {
-            type: "base64",
-            media_type: validMimeType,
-            data: base64Data
-          }
-        }
-      ]
+      content: fullPrompt
     }]
   });
 
