@@ -429,8 +429,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[PROCESS_RESUME] Processing file upload - MIME type: ${resumeContent.split(';')[0].split(':')[1]}`);
     console.log(`[PROCESS_RESUME] File data size: ${resumeContent.length} characters`);
+    console.log(`[PROCESS_RESUME] File data preview (first 100 chars): ${resumeContent.substring(0, 100)}`);
+    
+    // Check if we're getting raw PDF data instead of base64
+    if (resumeContent.startsWith('%PDF-')) {
+      console.error('[PROCESS_RESUME] Received raw PDF data instead of base64!');
+      return NextResponse.json({
+        success: false,
+        message: 'File upload error: Received raw PDF data instead of base64. Please try uploading again.',
+        error_type: 'FRONTEND_UPLOAD_ERROR'
+      }, { status: 400 });
+    }
 
     // Check user eligibility using tracking system
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
