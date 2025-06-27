@@ -145,13 +145,31 @@ function ResumeVita() {
     }
   };
 
-  const readFileContent = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
+  const readFileContent = async (file: File): Promise<string> => {
+    try {
+      console.log(`[FRONTEND] Extracting text from: ${file.name}`);
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/extract-text', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to extract text from file');
+      }
+      
+      console.log(`[FRONTEND] Successfully extracted ${result.text.length} characters`);
+      return result.text;
+      
+    } catch (error) {
+      console.error('[FRONTEND] File extraction error:', error);
+      throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   if (currentView === 'builder') {
