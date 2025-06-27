@@ -196,9 +196,13 @@ async function canUseFreeService(session: UserSession): Promise<{ allowed: boole
 export async function POST(request: NextRequest) {
   try {
     console.log('[USER_TRACKING] POST request received');
+    console.log('[USER_TRACKING] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('[USER_TRACKING] Environment check - Supabase configured:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
     
     const body = await request.json();
     const { email, fullName, action = 'check_eligibility' } = body;
+    
+    console.log(`[USER_TRACKING] Processing - Email: ${email}, Action: ${action}`);
     
     if (!email) {
       console.log('[USER_TRACKING] No email provided');
@@ -218,11 +222,14 @@ export async function POST(request: NextRequest) {
     
     if (!session) {
       console.error('[USER_TRACKING] Failed to create/get user session');
+      console.error('[USER_TRACKING] This indicates a Supabase connection or configuration issue');
       return NextResponse.json(
-        { success: false, message: 'Failed to create user session' },
+        { success: false, message: 'Database connection failed - check Supabase configuration' },
         { status: 500 }
       );
     }
+    
+    console.log(`[USER_TRACKING] Session retrieved/created successfully for ${email}`);
     
     if (action === 'check_eligibility') {
       const eligibility = await canUseFreeService(session);

@@ -295,7 +295,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check user eligibility using tracking system
-    const trackingResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/user-tracking`, {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+    console.log(`[PROCESS_RESUME] Calling user tracking API: ${baseUrl}/api/user-tracking`);
+    
+    const trackingResponse = await fetch(`${baseUrl}/api/user-tracking`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -348,7 +351,7 @@ export async function POST(request: NextRequest) {
         await sendResumeEmail(email, claudeResponse, template, fileName);
 
         // Record usage in tracking system
-        await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/user-tracking`, {
+        await fetch(`${baseUrl}/api/user-tracking`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -392,7 +395,7 @@ export async function POST(request: NextRequest) {
 
         // Record usage in tracking system (don't increment for post-payment)
         if (!isPostPayment) {
-          await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/user-tracking`, {
+          await fetch(`${baseUrl}/api/user-tracking`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
