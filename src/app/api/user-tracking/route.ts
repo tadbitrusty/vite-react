@@ -236,6 +236,8 @@ export async function POST(request: NextRequest) {
       const whitelistEntry = await getWhitelistByEmail(email);
       
       console.log(`[USER_TRACKING] Eligibility check for ${email}: ${eligibility.allowed}`);
+      console.log(`[USER_TRACKING] Whitelist entry found:`, JSON.stringify(whitelistEntry, null, 2));
+      console.log(`[USER_TRACKING] Session account type: ${session.account_type}`);
       
       return NextResponse.json({
         success: true,

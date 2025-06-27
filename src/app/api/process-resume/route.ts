@@ -373,7 +373,10 @@ export async function POST(request: NextRequest) {
     
     console.log(`[PROCESS_RESUME] Processing request for ${email}`);
     console.log(`[PROCESS_RESUME] Template: ${template}, Free eligible: ${eligibility.canUseFree}, Post-payment: ${isPostPayment}`);
-    console.log(`[PROCESS_RESUME] Account type: ${session.accountType}, Premium access: ${eligibility.privilegeLevel?.premium_access}, Whitelist type: ${eligibility.whitelistType}`);
+    console.log(`[PROCESS_RESUME] Account type: ${session.accountType}, Whitelist type: ${eligibility.whitelistType}`);
+    console.log(`[PROCESS_RESUME] Full eligibility object:`, JSON.stringify(eligibility, null, 2));
+    console.log(`[PROCESS_RESUME] Privilege level:`, JSON.stringify(eligibility.privilegeLevel, null, 2));
+    console.log(`[PROCESS_RESUME] Premium access check: ${eligibility.privilegeLevel?.premium_access}`);
 
     // Check if user can use free service or if they have special privileges
     if (template === 'ats-optimized') {
