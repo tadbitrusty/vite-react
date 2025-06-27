@@ -382,6 +382,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if raw PDF data was sent instead of extracted text
+    if (resumeContent.startsWith('%PDF-')) {
+      console.error('[PROCESS_RESUME] Raw PDF data received instead of extracted text');
+      return NextResponse.json({
+        success: false,
+        message: 'PDF file processing error. Please ensure your PDF contains selectable text (not scanned images) and try again.',
+        error_type: 'PDF_EXTRACTION_FAILED',
+        suggestion: 'If this continues, try saving your resume as a DOCX file or recreating it in Word/Google Docs.'
+      }, { status: 400 });
+    }
+
     // Check user eligibility using tracking system
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
     console.log(`[PROCESS_RESUME] Calling user tracking API: ${baseUrl}/api/user-tracking`);
