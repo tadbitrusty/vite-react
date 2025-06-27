@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Target, CheckCircle, Download, Mail, Home, AlertCircle } from 'lucide-react';
 import { RESUME_TEMPLATES } from '@/constants';
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -203,5 +203,32 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PaymentSuccessLoading() {
+  return (
+    <div className="min-h-screen relative px-4 py-8 md:py-16 gradient-bg flex items-center justify-center">
+      <div className="text-center">
+        <div className="flex items-center justify-center mb-6">
+          <Target className="w-8 h-8 text-[#4a90a4] mr-3" />
+          <h1 className="text-[#4a90a4] text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Crimson Text, serif' }}>
+            Resume Vita
+          </h1>
+        </div>
+        <div className="w-8 h-8 border-2 border-[#4a90a4] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-white text-lg" style={{ fontFamily: 'Inter, sans-serif' }}>
+          Loading payment confirmation...
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<PaymentSuccessLoading />}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
