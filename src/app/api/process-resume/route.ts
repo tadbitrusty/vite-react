@@ -67,11 +67,18 @@ function truncateContent(content: string, maxLength: number): string {
   return truncated + '...';
 }
 
-// Process resume with Claude using direct file input
-async function processResumeWithClaude(resumeFileBase64: string, jobDescription: string, template: string) {
+// Extract text from PDF buffer
+async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
+  const pdfParse = (await import('pdf-parse')).default;
+  const pdfData = await pdfParse(pdfBuffer);
+  return pdfData.text;
+}
+
+// Process resume with Claude using extracted text
+async function processResumeWithClaude(resumeContent: string, jobDescription: string, template: string) {
   const templateInfo = getTemplatePromptEnhancements(template);
   
-  console.log(`[CLAUDE] Processing file directly with Claude`);
+  console.log(`[CLAUDE] Processing extracted text, length: ${resumeContent.length}`);
   console.log(`[CLAUDE] Template: ${template}, Job description length: ${jobDescription.length}`);
   
   const prompt = `You are a master resume writer specializing in ATS optimization.
@@ -125,89 +132,22 @@ SKILLS:
 CERTIFICATIONS:
 [Only include this section if certifications exist in the original resume]
 
+ORIGINAL RESUME:
+${resumeContent}
+
 JOB DESCRIPTION:
 ${jobDescription}
-
-Please read the attached resume file and optimize it for the above job description while following all the identity preservation rules.
 
 Return ONLY the clean, final resume content with no instructional text:`;
 
   if (!anthropic) throw new Error('Anthropic client not initialized');
-  
-  // Parse the base64 data URL to get the actual base64 content
-  let base64Data: string;
-  let mimeType: string;
-  
-  try {
-    // Handle data URL format: data:mime/type;base64,actualdata
-    if (resumeFileBase64.startsWith('data:')) {
-      const parts = resumeFileBase64.split(',');
-      if (parts.length !== 2) {
-        throw new Error('Invalid data URL format');
-      }
-      base64Data = parts[1];
-      const header = parts[0]; // "data:application/pdf;base64"
-      mimeType = header.split(';')[0].split(':')[1]; // Extract "application/pdf"
-    } else {
-      // If not a data URL, assume it's raw base64 and default to PDF
-      base64Data = resumeFileBase64;
-      mimeType = 'application/pdf';
-    }
-    
-    // Clean and validate base64 data
-    base64Data = base64Data.trim();
-    
-    // Validate base64 format (should only contain A-Z, a-z, 0-9, +, /, =)
-    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
-    if (!base64Regex.test(base64Data)) {
-      console.error('[CLAUDE] Invalid base64 characters found');
-      console.error('[CLAUDE] Base64 preview:', base64Data.substring(0, 100));
-      throw new Error('File contains invalid base64 encoding');
-    }
-    
-  } catch (error) {
-    console.error('[CLAUDE] Error parsing base64 data:', error);
-    throw new Error('Invalid file format - please try uploading the file again');
-  }
-  
-  console.log(`[CLAUDE] Sending file to Claude - MIME type: ${mimeType || 'unknown'}, Base64 size: ${base64Data?.length || 0}`);
-  
-  if (!mimeType || !base64Data) {
-    throw new Error('Invalid file data - missing MIME type or content');
-  }
-  
-  // Determine content type based on MIME type
-  let contentType: "image" | "document";
-  let validMimeType: string;
-  
-  if (mimeType.startsWith('image/')) {
-    contentType = "image";
-    validMimeType = mimeType;
-  } else if (mimeType === 'application/pdf') {
-    contentType = "document";
-    validMimeType = "application/pdf";
-  } else {
-    // For other file types, treat as document
-    contentType = "document";
-    validMimeType = "application/pdf"; // Default to PDF for documents
-  }
-  
-  console.log(`[CLAUDE] Using content type: ${contentType}, MIME type: ${validMimeType}`);
-  
-  // Try a simpler approach - include base64 in text prompt
-  const fullPrompt = `${prompt}
-
-ATTACHED FILE (Base64 ${validMimeType}):
-${base64Data}
-
-Please read and parse the attached file above and create the optimized resume following all the identity preservation rules.`;
 
   const response = await anthropic.messages.create({
     model: "claude-3-5-sonnet-20241022", 
     max_tokens: 4000,
     messages: [{ 
       role: "user", 
-      content: fullPrompt
+      content: prompt
     }]
   });
 
@@ -432,14 +372,32 @@ export async function POST(request: NextRequest) {
     console.log(`[PROCESS_RESUME] File data size: ${resumeContent.length} characters`);
     console.log(`[PROCESS_RESUME] File data preview (first 100 chars): ${resumeContent.substring(0, 100)}`);
     
-    // Check if we're getting raw PDF data instead of base64
+    // Handle raw PDF data (since frontend is sending it)
+    let extractedText: string = resumeContent;
+    
     if (resumeContent.startsWith('%PDF-')) {
-      console.error('[PROCESS_RESUME] Received raw PDF data instead of base64!');
-      return NextResponse.json({
-        success: false,
-        message: 'File upload error: Received raw PDF data instead of base64. Please try uploading again.',
-        error_type: 'FRONTEND_UPLOAD_ERROR'
-      }, { status: 400 });
+      console.log('[PROCESS_RESUME] Received raw PDF data - extracting text...');
+      try {
+        // Convert string to buffer and extract text
+        const pdfBuffer = Buffer.from(resumeContent, 'binary');
+        extractedText = await extractTextFromPDF(pdfBuffer);
+        console.log(`[PROCESS_RESUME] Successfully extracted ${extractedText.length} characters from PDF`);
+        
+        if (extractedText.trim().length < 50) {
+          return NextResponse.json({
+            success: false,
+            message: 'Unable to extract readable text from PDF. Please ensure your PDF contains selectable text (not scanned images).',
+            error_type: 'PDF_EXTRACTION_FAILED'
+          }, { status: 400 });
+        }
+      } catch (error) {
+        console.error('[PROCESS_RESUME] PDF extraction failed:', error);
+        return NextResponse.json({
+          success: false,
+          message: 'Failed to process PDF file. Please try uploading a different format or ensure your PDF contains selectable text.',
+          error_type: 'PDF_EXTRACTION_FAILED'
+        }, { status: 400 });
+      }
     }
 
     // Check user eligibility using tracking system
@@ -494,7 +452,7 @@ export async function POST(request: NextRequest) {
 
       try {
         // Process with Claude  
-        const claudeResponse = await processResumeWithClaude(resumeContent, jobDescription, template);
+        const claudeResponse = await processResumeWithClaude(extractedText, jobDescription, template);
         
         // Send email with PDF
         await sendResumeEmail(email, claudeResponse, template, fileName);
@@ -537,7 +495,7 @@ export async function POST(request: NextRequest) {
       
       try {
         // Process with Claude  
-        const claudeResponse = await processResumeWithClaude(resumeContent, jobDescription, template);
+        const claudeResponse = await processResumeWithClaude(extractedText, jobDescription, template);
         
         // Send email with PDF
         await sendResumeEmail(email, claudeResponse, template, fileName);
