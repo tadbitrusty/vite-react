@@ -52,9 +52,35 @@ function getTemplatePromptEnhancements(templateId: string) {
   return enhancements[templateId as keyof typeof enhancements] || enhancements['ats-optimized'];
 }
 
+// Truncate content to stay within token limits
+function truncateContent(content: string, maxLength: number): string {
+  if (content.length <= maxLength) return content;
+  
+  // Try to truncate at word boundaries
+  const truncated = content.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+  
+  if (lastSpace > maxLength * 0.8) { // If we find a space in the last 20%
+    return truncated.substring(0, lastSpace) + '...';
+  }
+  
+  return truncated + '...';
+}
+
 // Process resume with Claude using ORIGINAL WORKING PROMPT
 async function processResumeWithClaude(resumeContent: string, jobDescription: string, template: string) {
   const templateInfo = getTemplatePromptEnhancements(template);
+  
+  // Truncate inputs to prevent token limit issues
+  // Rough estimate: 1 token ≈ 4 characters, leaving room for prompt structure
+  const maxResumeChars = 40000; // ~10k tokens
+  const maxJobDescChars = 20000; // ~5k tokens
+  
+  const truncatedResume = truncateContent(resumeContent, maxResumeChars);
+  const truncatedJobDesc = truncateContent(jobDescription, maxJobDescChars);
+  
+  console.log(`[CLAUDE] Original resume length: ${resumeContent.length}, truncated: ${truncatedResume.length}`);
+  console.log(`[CLAUDE] Original job desc length: ${jobDescription.length}, truncated: ${truncatedJobDesc.length}`);
   
   const prompt = `You are a master resume writer specializing in ATS optimization.
 
@@ -106,10 +132,10 @@ CERTIFICATIONS:
 [Only include this section if certifications exist in the original resume]
 
 ORIGINAL RESUME:
-${resumeContent}
+${truncatedResume}
 
 JOB DESCRIPTION:
-${jobDescription}
+${truncatedJobDesc}
 
 Return ONLY the clean, final resume content with no instructional text:`;
 
@@ -373,10 +399,7 @@ export async function POST(request: NextRequest) {
     
     console.log(`[PROCESS_RESUME] Processing request for ${email}`);
     console.log(`[PROCESS_RESUME] Template: ${template}, Free eligible: ${eligibility.canUseFree}, Post-payment: ${isPostPayment}`);
-    console.log(`[PROCESS_RESUME] Account type: ${session.accountType}, Whitelist type: ${eligibility.whitelistType}`);
-    console.log(`[PROCESS_RESUME] Full eligibility object:`, JSON.stringify(eligibility, null, 2));
-    console.log(`[PROCESS_RESUME] Privilege level:`, JSON.stringify(eligibility.privilegeLevel, null, 2));
-    console.log(`[PROCESS_RESUME] Premium access check: ${eligibility.privilegeLevel?.premium_access}`);
+    console.log(`[PROCESS_RESUME] Account type: ${session.accountType}, Premium access: ${eligibility.privilegeLevel?.premium_access}`);
 
     // Check if user can use free service or if they have special privileges
     if (template === 'ats-optimized') {
