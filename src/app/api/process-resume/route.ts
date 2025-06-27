@@ -140,6 +140,24 @@ Return ONLY the clean, final resume content with no instructional text:`;
   
   console.log(`[CLAUDE] Sending file to Claude - MIME type: ${mimeType}, Base64 size: ${base64Data.length}`);
   
+  // Determine content type based on MIME type
+  let contentType: "image" | "document";
+  let validMimeType: string;
+  
+  if (mimeType.startsWith('image/')) {
+    contentType = "image";
+    validMimeType = mimeType;
+  } else if (mimeType === 'application/pdf') {
+    contentType = "document";
+    validMimeType = "application/pdf";
+  } else {
+    // For other file types, treat as document
+    contentType = "document";
+    validMimeType = "application/pdf"; // Default to PDF for documents
+  }
+  
+  console.log(`[CLAUDE] Using content type: ${contentType}, MIME type: ${validMimeType}`);
+  
   const response = await anthropic.messages.create({
     model: "claude-3-5-sonnet-20241022", 
     max_tokens: 4000,
@@ -151,10 +169,10 @@ Return ONLY the clean, final resume content with no instructional text:`;
           text: prompt
         },
         {
-          type: "image",
+          type: contentType,
           source: {
             type: "base64",
-            media_type: mimeType as any,
+            media_type: validMimeType,
             data: base64Data
           }
         }
