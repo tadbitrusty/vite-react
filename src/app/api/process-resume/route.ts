@@ -150,6 +150,14 @@ Return ONLY the clean, final resume content with no instructional text:`;
   });
 
   const rawContent = response.content[0]?.text || '';
+  
+  // Check if Claude is asking for the original content (indicates PDF extraction failed)
+  if (rawContent.toLowerCase().includes('cannot fully parse') || 
+      rawContent.toLowerCase().includes('readable text format') ||
+      rawContent.toLowerCase().includes('pdf format that i cannot')) {
+    throw new Error('PDF_EXTRACTION_FAILED');
+  }
+  
   return cleanResumeOutput(rawContent);
 }
 
@@ -451,6 +459,16 @@ export async function POST(request: NextRequest) {
 
       } catch (error) {
         console.error('Error processing resume:', error);
+        
+        if (error instanceof Error && error.message === 'PDF_EXTRACTION_FAILED') {
+          return NextResponse.json({
+            success: false,
+            message: 'Unable to extract text from your resume file. Please ensure your PDF contains selectable text (not scanned images) or try uploading a DOCX or TXT file instead.',
+            error_type: 'PDF_EXTRACTION_FAILED',
+            suggestion: 'Try recreating your resume in Word/Google Docs and saving as PDF with selectable text.'
+          }, { status: 400 });
+        }
+        
         return NextResponse.json(
           { success: false, message: 'Failed to process resume. Please try again.' },
           { status: 500 }
@@ -511,6 +529,16 @@ export async function POST(request: NextRequest) {
 
       } catch (error) {
         console.error('[PROCESS_RESUME] Error processing premium resume:', error);
+        
+        if (error instanceof Error && error.message === 'PDF_EXTRACTION_FAILED') {
+          return NextResponse.json({
+            success: false,
+            message: 'Unable to extract text from your resume file. Please ensure your PDF contains selectable text (not scanned images) or try uploading a DOCX or TXT file instead.',
+            error_type: 'PDF_EXTRACTION_FAILED',
+            suggestion: 'Try recreating your resume in Word/Google Docs and saving as PDF with selectable text.'
+          }, { status: 400 });
+        }
+        
         return NextResponse.json(
           { success: false, message: 'Failed to process premium resume. Please contact support.' },
           { status: 500 }
