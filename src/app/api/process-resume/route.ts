@@ -69,7 +69,11 @@ INSTRUCTIONS:
 - Maintain professional formatting appropriate for ${templateInfo.type}
 - Keep the same contact information from the original resume
 - Focus on relevant experience for this specific job
-- Return structured content in the following format:
+- IMPORTANT: Return ONLY the final resume content, no explanatory text or instructions
+- Do NOT include any sections that are empty or have no content
+- If a section like CERTIFICATIONS has no content, omit it entirely
+
+Return the structured resume content in the following format:
 
 PERSONAL INFO:
 Name: [Extract from original]
@@ -99,7 +103,7 @@ SKILLS:
 [Categorized skills relevant to the job, separated by categories if applicable]
 
 CERTIFICATIONS:
-[If any exist in original resume]
+[Only include this section if certifications exist in the original resume]
 
 ORIGINAL RESUME:
 ${resumeContent}
@@ -107,7 +111,7 @@ ${resumeContent}
 JOB DESCRIPTION:
 ${jobDescription}
 
-Return the structured resume content following the exact format above:`;
+Return ONLY the clean, final resume content with no instructional text:`;
 
   if (!anthropic) throw new Error('Anthropic client not initialized');
   
@@ -117,7 +121,48 @@ Return the structured resume content following the exact format above:`;
     messages: [{ role: "user", content: prompt }]
   });
 
-  return response.content[0]?.text || '';
+  const rawContent = response.content[0]?.text || '';
+  return cleanResumeOutput(rawContent);
+}
+
+// Clean up Claude output to ensure professional final PDF
+function cleanResumeOutput(content: string): string {
+  let cleaned = content;
+  
+  // Remove any instructional text that might leak through
+  const instructionalPatterns = [
+    /^.*based on the provided resume.*$/gim,
+    /^.*following the format.*$/gim,
+    /^.*here is the.*$/gim,
+    /^.*structured resume.*$/gim,
+    /^\[.*\]$/gm, // Remove any bracketed instructions
+  ];
+  
+  instructionalPatterns.forEach(pattern => {
+    cleaned = cleaned.replace(pattern, '');
+  });
+  
+  // Remove empty sections
+  const emptySectionPatterns = [
+    /CERTIFICATIONS:\s*\[.*none.*\]/gim,
+    /CERTIFICATIONS:\s*$/gim,
+    /CERTIFICATIONS:\s*\n\s*$/gim,
+    /^[A-Z\s]+:\s*\[.*not specified.*\]/gim,
+    /^[A-Z\s]+:\s*\[.*none.*\]/gim,
+    /^[A-Z\s]+:\s*N\/A\s*$/gim,
+  ];
+  
+  emptySectionPatterns.forEach(pattern => {
+    cleaned = cleaned.replace(pattern, '');
+  });
+  
+  // Clean up multiple blank lines
+  cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n');
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  return cleaned;
 }
 
 // Generate actual PDF using jsPDF
