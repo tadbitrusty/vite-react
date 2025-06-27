@@ -59,7 +59,8 @@
       "Bash(npx next lint:*)",
       "Bash(npx next:*)",
       "Bash(env)",
-      "Bash(tsc --version)"
+      "Bash(tsc --version)",
+      "Bash(git reset:*)"
     ],
     "deny": []
   }

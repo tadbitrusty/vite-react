@@ -43,13 +43,24 @@ export async function POST(request: NextRequest) {
     console.log(`[STRIPE_CHECKOUT] Creating session for template: ${template.name} ($${template.price})`);
     console.log(`[STRIPE_CHECKOUT] Customer email: ${email}`);
 
+    // Get stripe price ID safely
+    const stripePrice = (template as any).stripePrice;
+    
+    if (!stripePrice) {
+      console.log(`[STRIPE_CHECKOUT] No Stripe price ID for template: ${templateId}`);
+      return NextResponse.json(
+        { success: false, message: 'Template pricing not configured' },
+        { status: 400 }
+      );
+    }
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: email,
       line_items: [
         {
-          price: template.stripePrice, // Use the Stripe price ID from constants
+          price: stripePrice, // Use the Stripe price ID from constants
           quantity: 1,
         },
       ],

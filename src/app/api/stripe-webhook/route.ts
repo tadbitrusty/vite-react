@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { headers } from 'next/headers';
 import { RESUME_TEMPLATES } from '../../../constants';
 
 // Initialize Stripe with secret key
@@ -15,8 +14,7 @@ export async function POST(request: NextRequest) {
     console.log('[STRIPE_WEBHOOK] Webhook received');
     
     const body = await request.text();
-    const headersList = headers();
-    const sig = headersList.get('stripe-signature');
+    const sig = request.headers.get('stripe-signature');
 
     if (!sig) {
       console.error('[STRIPE_WEBHOOK] No signature header found');
