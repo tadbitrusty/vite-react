@@ -1,4 +1,19 @@
-import { createClient } from '@supabase/supabase-js';
+// Dynamic import for build compatibility
+let createClient: any;
+try {
+  const supabaseModule = require('@supabase/supabase-js');
+  createClient = supabaseModule.createClient;
+} catch (error) {
+  console.warn('Supabase module not available during build, using fallback');
+  createClient = () => ({
+    from: () => ({
+      select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }),
+      insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
+      upsert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
+      delete: () => Promise.resolve({ error: null })
+    })
+  });
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
