@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getAdminSession, createAdminSession, deleteAdminSession } from '../../../lib/supabase';
+import { getAdminSession, createAdminSession, deleteAdminSession } from '../../../../lib/supabase';
 
 // Admin credentials (in production, store in secure database)
 const ADMIN_CREDENTIALS = {
