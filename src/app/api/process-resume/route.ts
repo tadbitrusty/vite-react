@@ -81,6 +81,13 @@ async function processResumeWithClaude(resumeContent: string, jobDescription: st
   
   console.log(`[CLAUDE] Original resume length: ${resumeContent.length}, truncated: ${truncatedResume.length}`);
   console.log(`[CLAUDE] Original job desc length: ${jobDescription.length}, truncated: ${truncatedJobDesc.length}`);
+  console.log(`[CLAUDE] Resume content preview (first 500 chars): ${resumeContent.substring(0, 500)}`);
+  
+  // Check if resume content is essentially empty or corrupted
+  if (resumeContent.trim().length < 100) {
+    console.error(`[CLAUDE] Resume content too short: ${resumeContent.length} characters`);
+    throw new Error('PDF_EXTRACTION_FAILED');
+  }
   
   const prompt = `You are a master resume writer specializing in ATS optimization.
 
@@ -410,6 +417,8 @@ export async function POST(request: NextRequest) {
     console.log(`[PROCESS_RESUME] Processing request for ${email}`);
     console.log(`[PROCESS_RESUME] Template: ${template}, Free eligible: ${eligibility.canUseFree}, Post-payment: ${isPostPayment}`);
     console.log(`[PROCESS_RESUME] Account type: ${session.accountType}, Premium access: ${eligibility.privilegeLevel?.premium_access}`);
+    console.log(`[PROCESS_RESUME] Resume content length: ${resumeContent.length}`);
+    console.log(`[PROCESS_RESUME] Resume content preview: ${resumeContent.substring(0, 200)}...`);
 
     // Check if user can use free service or if they have special privileges
     if (template === 'ats-optimized') {
