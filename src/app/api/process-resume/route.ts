@@ -88,45 +88,47 @@ TEMPLATE TYPE: ${templateInfo.type}
 TARGET AUDIENCE: ${templateInfo.target}
 TEMPLATE GUIDANCE: ${templateInfo.guidance}
 
-INSTRUCTIONS:
-- Do NOT lie or over-embellish
-- Create an ATS-optimized resume that matches the job requirements
-- Use keywords from the job description naturally
+CRITICAL INSTRUCTIONS:
+- NEVER CHANGE THE PERSON'S IDENTITY - Keep exact name, email, phone, and personal details
+- Do NOT lie, fabricate, or over-embellish any information
+- ONLY enhance and optimize the existing content from the original resume
+- Use keywords from the job description naturally within EXISTING experience
+- Keep ALL contact information EXACTLY as provided in the original resume
 - Maintain professional formatting appropriate for ${templateInfo.type}
-- Keep the same contact information from the original resume
-- Focus on relevant experience for this specific job
+- Focus on relevant experience for this specific job using ONLY the person's actual background
 - IMPORTANT: Return ONLY the final resume content, no explanatory text or instructions
 - Do NOT include any sections that are empty or have no content
 - If a section like CERTIFICATIONS has no content, omit it entirely
+- PRESERVE THE PERSON'S ACTUAL IDENTITY AND CONTACT INFORMATION
 
 Return the structured resume content in the following format:
 
 PERSONAL INFO:
-Name: [Extract from original]
-Email: [Extract from original]  
-Phone: [Extract from original]
-Location: [Extract from original]
-LinkedIn: [Extract if available]
+Name: [MUST be EXACTLY as shown in original resume]
+Email: [MUST be EXACTLY as shown in original resume]  
+Phone: [MUST be EXACTLY as shown in original resume]
+Location: [MUST be EXACTLY as shown in original resume]
+LinkedIn: [MUST be EXACTLY as shown in original resume if available]
 
 SUMMARY:
-[2-3 sentence professional summary tailored to the job]
+[2-3 sentence professional summary tailored to the job using ONLY the person's actual background]
 
 EXPERIENCE:
-[Format each job as:]
-Job Title - Company Name
-Date Range
-• Achievement-focused bullet point
-• Quantified accomplishment
-• Relevant skill demonstration
+[Format each job EXACTLY as shown in original resume, only enhance bullet points with keywords:]
+Job Title - Company Name [MUST match original]
+Date Range [MUST match original]
+• [Enhanced bullet point using existing responsibilities + job keywords]
+• [Enhanced bullet point using existing accomplishments + job keywords]
+• [Enhanced bullet point using existing skills + job keywords]
 
 EDUCATION:
-[Format as:]
-Degree - Institution Name
-Date Range
-[Any relevant details]
+[MUST match original resume exactly:]
+Degree - Institution Name [EXACTLY as shown in original]
+Date Range [EXACTLY as shown in original]
+[Any details EXACTLY as shown in original]
 
 SKILLS:
-[Categorized skills relevant to the job, separated by categories if applicable]
+[Use ONLY skills from original resume, enhanced with job-relevant keywords]
 
 CERTIFICATIONS:
 [Only include this section if certifications exist in the original resume]
