@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as pdfParse from 'pdf-parse';
-import * as mammoth from 'mammoth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +24,8 @@ export async function POST(request: NextRequest) {
       console.log('[EXTRACT_TEXT] Processing PDF file');
       
       try {
+        // Dynamic import to prevent build-time issues
+        const pdfParse = (await import('pdf-parse')).default;
         const pdfData = await pdfParse(fileBuffer);
         extractedText = pdfData.text;
         console.log(`[EXTRACT_TEXT] PDF extracted ${extractedText.length} characters`);
@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
       console.log('[EXTRACT_TEXT] Processing DOCX file');
       
       try {
+        // Dynamic import to prevent build-time issues
+        const mammoth = await import('mammoth');
         const result = await mammoth.extractRawText({ buffer: fileBuffer });
         extractedText = result.value;
         console.log(`[EXTRACT_TEXT] DOCX extracted ${extractedText.length} characters`);
