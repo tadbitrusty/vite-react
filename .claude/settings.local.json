@@ -61,7 +61,8 @@
       "Bash(env)",
       "Bash(tsc --version)",
       "Bash(git reset:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

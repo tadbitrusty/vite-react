@@ -434,7 +434,7 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // Process with Claude
+        // Process with Claude  
         const claudeResponse = await processResumeWithClaude(resumeContent, jobDescription, template);
         
         // Send email with PDF
@@ -477,7 +477,7 @@ export async function POST(request: NextRequest) {
       console.log(`[PROCESS_RESUME] Processing premium template for ${email} - Post-payment: ${isPostPayment}`);
       
       try {
-        // Process with Claude
+        // Process with Claude  
         const claudeResponse = await processResumeWithClaude(resumeContent, jobDescription, template);
         
         // Send email with PDF
