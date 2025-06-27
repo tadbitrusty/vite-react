@@ -373,6 +373,7 @@ export async function POST(request: NextRequest) {
     
     console.log(`[PROCESS_RESUME] Processing request for ${email}`);
     console.log(`[PROCESS_RESUME] Template: ${template}, Free eligible: ${eligibility.canUseFree}, Post-payment: ${isPostPayment}`);
+    console.log(`[PROCESS_RESUME] Account type: ${session.accountType}, Premium access: ${eligibility.privilegeLevel?.premium_access}, Whitelist type: ${eligibility.whitelistType}`);
 
     // Check if user can use free service or if they have special privileges
     if (template === 'ats-optimized') {
@@ -427,8 +428,8 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
-    } else if (isPostPayment || eligibility.canUseFree) {
-      // Premium templates - process if payment verified or user has privileges
+    } else if (isPostPayment || eligibility.canUseFree || eligibility.privilegeLevel?.premium_access) {
+      // Premium templates - process if payment verified, user has free eligibility, or premium access privilege
       console.log(`[PROCESS_RESUME] Processing premium template for ${email} - Post-payment: ${isPostPayment}`);
       
       try {
@@ -461,7 +462,11 @@ export async function POST(request: NextRequest) {
           'executive-format': 'Executive Format'
         }[template] || 'Premium Template';
 
-        console.log(`[PROCESS_RESUME] Premium resume generated successfully for ${email} - ${templateInfo}`);
+        const accessReason = isPostPayment ? 'Payment verified' : 
+                            eligibility.privilegeLevel?.premium_access ? 'Premium access privilege' :
+                            eligibility.canUseFree ? 'Free eligibility' : 'Unknown';
+        
+        console.log(`[PROCESS_RESUME] Premium resume generated successfully for ${email} - ${templateInfo} (${accessReason})`);
 
         return NextResponse.json({
           success: true,
@@ -472,6 +477,7 @@ export async function POST(request: NextRequest) {
             whitelistStatus: session.whitelistStatus
           },
           paymentVerified: isPostPayment,
+          accessReason,
           timestamp: new Date().toISOString()
         });
 
