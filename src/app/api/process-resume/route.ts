@@ -135,10 +135,31 @@ Return ONLY the clean, final resume content with no instructional text:`;
   if (!anthropic) throw new Error('Anthropic client not initialized');
   
   // Parse the base64 data URL to get the actual base64 content
-  const base64Data = resumeFileBase64.split(',')[1];
-  const mimeType = resumeFileBase64.split(';')[0].split(':')[1];
+  let base64Data: string;
+  let mimeType: string;
   
-  console.log(`[CLAUDE] Sending file to Claude - MIME type: ${mimeType}, Base64 size: ${base64Data.length}`);
+  try {
+    // Handle data URL format: data:mime/type;base64,actualdata
+    if (resumeFileBase64.startsWith('data:')) {
+      const parts = resumeFileBase64.split(',');
+      base64Data = parts[1];
+      const header = parts[0]; // "data:application/pdf;base64"
+      mimeType = header.split(';')[0].split(':')[1]; // Extract "application/pdf"
+    } else {
+      // If not a data URL, assume it's raw base64 and default to PDF
+      base64Data = resumeFileBase64;
+      mimeType = 'application/pdf';
+    }
+  } catch (error) {
+    console.error('[CLAUDE] Error parsing base64 data:', error);
+    throw new Error('Invalid file format');
+  }
+  
+  console.log(`[CLAUDE] Sending file to Claude - MIME type: ${mimeType || 'unknown'}, Base64 size: ${base64Data?.length || 0}`);
+  
+  if (!mimeType || !base64Data) {
+    throw new Error('Invalid file data - missing MIME type or content');
+  }
   
   // Determine content type based on MIME type
   let contentType: "image" | "document";
