@@ -67,27 +67,12 @@ function truncateContent(content: string, maxLength: number): string {
   return truncated + '...';
 }
 
-// Process resume with Claude using ORIGINAL WORKING PROMPT
-async function processResumeWithClaude(resumeContent: string, jobDescription: string, template: string) {
+// Process resume with Claude using direct file input
+async function processResumeWithClaude(resumeFileBase64: string, jobDescription: string, template: string) {
   const templateInfo = getTemplatePromptEnhancements(template);
   
-  // Truncate inputs to prevent token limit issues
-  // Rough estimate: 1 token ≈ 4 characters, leaving room for prompt structure
-  const maxResumeChars = 40000; // ~10k tokens
-  const maxJobDescChars = 20000; // ~5k tokens
-  
-  const truncatedResume = truncateContent(resumeContent, maxResumeChars);
-  const truncatedJobDesc = truncateContent(jobDescription, maxJobDescChars);
-  
-  console.log(`[CLAUDE] Original resume length: ${resumeContent.length}, truncated: ${truncatedResume.length}`);
-  console.log(`[CLAUDE] Original job desc length: ${jobDescription.length}, truncated: ${truncatedJobDesc.length}`);
-  console.log(`[CLAUDE] Resume content preview (first 500 chars): ${resumeContent.substring(0, 500)}`);
-  
-  // Check if resume content is essentially empty or corrupted
-  if (resumeContent.trim().length < 100) {
-    console.error(`[CLAUDE] Resume content too short: ${resumeContent.length} characters`);
-    throw new Error('PDF_EXTRACTION_FAILED');
-  }
+  console.log(`[CLAUDE] Processing file directly with Claude`);
+  console.log(`[CLAUDE] Template: ${template}, Job description length: ${jobDescription.length}`);
   
   const prompt = `You are a master resume writer specializing in ATS optimization.
 
@@ -97,7 +82,7 @@ TEMPLATE GUIDANCE: ${templateInfo.guidance}
 
 CRITICAL INSTRUCTIONS:
 - NEVER CHANGE THE PERSON'S IDENTITY - Keep exact name, email, phone, and personal details
-- Do NOT lie, fabricate, or over-embellish any information
+- Do NOT lie, fabricate, or over-embellish any information  
 - ONLY enhance and optimize the existing content from the original resume
 - Use keywords from the job description naturally within EXISTING experience
 - Keep ALL contact information EXACTLY as provided in the original resume
@@ -140,31 +125,44 @@ SKILLS:
 CERTIFICATIONS:
 [Only include this section if certifications exist in the original resume]
 
-ORIGINAL RESUME:
-${truncatedResume}
-
 JOB DESCRIPTION:
-${truncatedJobDesc}
+${jobDescription}
+
+Please read the attached resume file and optimize it for the above job description while following all the identity preservation rules.
 
 Return ONLY the clean, final resume content with no instructional text:`;
 
   if (!anthropic) throw new Error('Anthropic client not initialized');
   
+  // Parse the base64 data URL to get the actual base64 content
+  const base64Data = resumeFileBase64.split(',')[1];
+  const mimeType = resumeFileBase64.split(';')[0].split(':')[1];
+  
+  console.log(`[CLAUDE] Sending file to Claude - MIME type: ${mimeType}, Base64 size: ${base64Data.length}`);
+  
   const response = await anthropic.messages.create({
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-3-5-sonnet-20241022", 
     max_tokens: 4000,
-    messages: [{ role: "user", content: prompt }]
+    messages: [{ 
+      role: "user", 
+      content: [
+        {
+          type: "text",
+          text: prompt
+        },
+        {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: mimeType as any,
+            data: base64Data
+          }
+        }
+      ]
+    }]
   });
 
   const rawContent = response.content[0]?.text || '';
-  
-  // Check if Claude is asking for the original content (indicates PDF extraction failed)
-  if (rawContent.toLowerCase().includes('cannot fully parse') || 
-      rawContent.toLowerCase().includes('readable text format') ||
-      rawContent.toLowerCase().includes('pdf format that i cannot')) {
-    throw new Error('PDF_EXTRACTION_FAILED');
-  }
-  
   return cleanResumeOutput(rawContent);
 }
 
@@ -382,16 +380,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if raw PDF data was sent instead of extracted text
-    if (resumeContent.startsWith('%PDF-')) {
-      console.error('[PROCESS_RESUME] Raw PDF data received instead of extracted text');
-      return NextResponse.json({
-        success: false,
-        message: 'PDF file processing error. Please ensure your PDF contains selectable text (not scanned images) and try again.',
-        error_type: 'PDF_EXTRACTION_FAILED',
-        suggestion: 'If this continues, try saving your resume as a DOCX file or recreating it in Word/Google Docs.'
-      }, { status: 400 });
-    }
+    console.log(`[PROCESS_RESUME] Processing file upload - MIME type: ${resumeContent.split(';')[0].split(':')[1]}`);
+    console.log(`[PROCESS_RESUME] File data size: ${resumeContent.length} characters`);
 
     // Check user eligibility using tracking system
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
@@ -428,8 +418,6 @@ export async function POST(request: NextRequest) {
     console.log(`[PROCESS_RESUME] Processing request for ${email}`);
     console.log(`[PROCESS_RESUME] Template: ${template}, Free eligible: ${eligibility.canUseFree}, Post-payment: ${isPostPayment}`);
     console.log(`[PROCESS_RESUME] Account type: ${session.accountType}, Premium access: ${eligibility.privilegeLevel?.premium_access}`);
-    console.log(`[PROCESS_RESUME] Resume content length: ${resumeContent.length}`);
-    console.log(`[PROCESS_RESUME] Resume content preview: ${resumeContent.substring(0, 200)}...`);
 
     // Check if user can use free service or if they have special privileges
     if (template === 'ats-optimized') {
@@ -479,16 +467,6 @@ export async function POST(request: NextRequest) {
 
       } catch (error) {
         console.error('Error processing resume:', error);
-        
-        if (error instanceof Error && error.message === 'PDF_EXTRACTION_FAILED') {
-          return NextResponse.json({
-            success: false,
-            message: 'Unable to extract text from your resume file. Please ensure your PDF contains selectable text (not scanned images) or try uploading a DOCX or TXT file instead.',
-            error_type: 'PDF_EXTRACTION_FAILED',
-            suggestion: 'Try recreating your resume in Word/Google Docs and saving as PDF with selectable text.'
-          }, { status: 400 });
-        }
-        
         return NextResponse.json(
           { success: false, message: 'Failed to process resume. Please try again.' },
           { status: 500 }
@@ -549,16 +527,6 @@ export async function POST(request: NextRequest) {
 
       } catch (error) {
         console.error('[PROCESS_RESUME] Error processing premium resume:', error);
-        
-        if (error instanceof Error && error.message === 'PDF_EXTRACTION_FAILED') {
-          return NextResponse.json({
-            success: false,
-            message: 'Unable to extract text from your resume file. Please ensure your PDF contains selectable text (not scanned images) or try uploading a DOCX or TXT file instead.',
-            error_type: 'PDF_EXTRACTION_FAILED',
-            suggestion: 'Try recreating your resume in Word/Google Docs and saving as PDF with selectable text.'
-          }, { status: 400 });
-        }
-        
         return NextResponse.json(
           { success: false, message: 'Failed to process premium resume. Please contact support.' },
           { status: 500 }

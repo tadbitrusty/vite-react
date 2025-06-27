@@ -117,30 +117,19 @@ export default function Home() {
   };
 
   const readFileContent = async (file: File): Promise<string> => {
-    try {
-      console.log(`[FRONTEND] Extracting text from: ${file.name}`);
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await fetch('/api/extract-text', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to extract text from file');
-      }
-      
-      console.log(`[FRONTEND] Successfully extracted ${result.text.length} characters`);
-      return result.text;
-      
-    } catch (error) {
-      console.error('[FRONTEND] File extraction error:', error);
-      throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    console.log(`[FRONTEND] Preparing file for Claude: ${file.name} (${file.type})`);
+    
+    // Convert file to base64 for Claude API
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        console.log(`[FRONTEND] File converted to base64, size: ${base64.length}`);
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

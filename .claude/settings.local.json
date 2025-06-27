@@ -60,7 +60,8 @@
       "Bash(npx next:*)",
       "Bash(env)",
       "Bash(tsc --version)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": []
   }
