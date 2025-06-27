@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
     initializeServices();
     
     const body = await request.json();
-    const { email, resumeContent, jobDescription, fileName, template, isFirstTimeFlow } = body;
+    const { email, resumeContent, jobDescription, fileName, template, isFirstTimeFlow, paymentSessionId, skipPaymentCheck } = body;
 
     // Validate required fields
     if (!email || !resumeContent || !jobDescription || !fileName || !template) {
@@ -319,6 +319,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { session, eligibility } = trackingResult;
+
+    // Check if this is a post-payment request
+    const isPostPayment = skipPaymentCheck === true || paymentSessionId;
+    
+    console.log(`[PROCESS_RESUME] Processing request for ${email}`);
+    console.log(`[PROCESS_RESUME] Template: ${template}, Free eligible: ${eligibility.canUseFree}, Post-payment: ${isPostPayment}`);
 
     // Check if user can use free service or if they have special privileges
     if (template === 'ats-optimized') {
@@ -373,8 +379,63 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+    } else if (isPostPayment || eligibility.canUseFree) {
+      // Premium templates - process if payment verified or user has privileges
+      console.log(`[PROCESS_RESUME] Processing premium template for ${email} - Post-payment: ${isPostPayment}`);
+      
+      try {
+        // Process with Claude
+        const claudeResponse = await processResumeWithClaude(resumeContent, jobDescription, template);
+        
+        // Send email with PDF
+        await sendResumeEmail(email, claudeResponse, template, fileName);
+
+        // Record usage in tracking system (don't increment for post-payment)
+        if (!isPostPayment) {
+          await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/user-tracking`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-forwarded-for': request.headers.get('x-forwarded-for') || '',
+              'user-agent': request.headers.get('user-agent') || ''
+            },
+            body: JSON.stringify({
+              email,
+              action: 'record_usage'
+            })
+          });
+        }
+
+        const templateInfo = {
+          'entry-clean': 'Premium Classic',
+          'tech-focus': 'Tech Focus', 
+          'professional-plus': 'Premium Plus',
+          'executive-format': 'Executive Format'
+        }[template] || 'Premium Template';
+
+        console.log(`[PROCESS_RESUME] Premium resume generated successfully for ${email} - ${templateInfo}`);
+
+        return NextResponse.json({
+          success: true,
+          message: `Premium ${templateInfo} resume processed and sent via email successfully!`,
+          session: {
+            accountType: session.accountType,
+            freeResumesUsed: session.freeResumesUsed,
+            whitelistStatus: session.whitelistStatus
+          },
+          paymentVerified: isPostPayment,
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        console.error('[PROCESS_RESUME] Error processing premium resume:', error);
+        return NextResponse.json(
+          { success: false, message: 'Failed to process premium resume. Please contact support.' },
+          { status: 500 }
+        );
+      }
     } else {
-      // Premium templates - check for discounts
+      // Premium templates - require payment
       const discountPercent = session.discountPercent || 0;
       const template_info = {
         'entry-clean': { name: 'Premium Classic', price: 5.99 },
@@ -386,6 +447,14 @@ export async function POST(request: NextRequest) {
       const discountedPrice = discountPercent > 0 
         ? (template_info.price * (1 - discountPercent / 100)).toFixed(2)
         : template_info.price;
+
+      // Create payment URL with all necessary parameters
+      const paymentParams = new URLSearchParams({
+        template,
+        email,
+        resumeData: Buffer.from(resumeContent).toString('base64'),
+        jobDescription: Buffer.from(jobDescription).toString('base64')
+      });
 
       return NextResponse.json({
         success: false,
@@ -399,7 +468,7 @@ export async function POST(request: NextRequest) {
           accountType: session.accountType,
           whitelistStatus: session.whitelistStatus
         },
-        payment_url: '/payment' // Implement Stripe integration
+        payment_url: `/payment?${paymentParams.toString()}`
       });
     }
 

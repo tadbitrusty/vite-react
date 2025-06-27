@@ -8,7 +8,8 @@ export const API_ENDPOINTS = {
   ADMIN_WHITELIST: '/api/admin/whitelist',
   ADMIN_USERS: '/api/admin/users',
   HEALTH: '/api/health',
-  STRIPE_WEBHOOK: '/api/stripe-webhook'
+  STRIPE_WEBHOOK: '/api/stripe-webhook',
+  CREATE_CHECKOUT_SESSION: '/api/create-checkout-session'
 } as const;
 
 export const FILE_CONFIG = {
