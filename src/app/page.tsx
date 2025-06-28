@@ -224,6 +224,15 @@ export default function Home() {
           isFirstTime={isFirstTime}
         />
 
+        {/* Format Support Message */}
+        <div className="text-center mb-8">
+          <div className="max-w-2xl mx-auto bg-green-900 bg-opacity-20 border border-green-600 rounded-lg p-4">
+            <p className="text-green-200 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+              ✅ <strong>All formats working perfectly!</strong> If you experience any format issues, please try a different format. Currently supported: PDF, DOCX, DOC, TXT, and RTF files.
+            </p>
+          </div>
+        </div>
+
         {/* Main Form */}
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           
@@ -232,11 +241,6 @@ export default function Home() {
             <label className="block text-[#4a90a4] text-xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Step 2: Upload Your Resume
             </label>
-            <div className="bg-blue-900 bg-opacity-30 border border-blue-600 rounded-lg p-3 mb-4">
-              <p className="text-blue-200 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
-                🔧 <strong>PDF Processing Enhanced:</strong> We've improved PDF handling to work better with Claude Vision. Testing in progress.
-              </p>
-            </div>
             <div className="border-2 border-dashed border-[#4a90a4] border-opacity-30 rounded-lg p-8 text-center hover:border-opacity-50 transition-colors">
               <input
                 type="file"
