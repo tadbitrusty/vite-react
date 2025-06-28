@@ -148,7 +148,21 @@ function ResumeVita() {
   const readFileContent = async (file: File): Promise<string> => {
     console.log(`[FRONTEND] Preparing file for Claude: ${file.name} (${file.type})`);
     
-    // Convert file to base64 for Claude API
+    // For PDFs, send raw binary data to backend for image conversion
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const binaryString = reader.result as string;
+          console.log(`[FRONTEND] PDF converted to binary, size: ${binaryString.length}`);
+          resolve(binaryString);
+        };
+        reader.onerror = reject;
+        reader.readAsBinaryString(file);
+      });
+    }
+    
+    // For other formats, convert to base64 for Claude API
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {

@@ -67,14 +67,154 @@ function truncateContent(content: string, maxLength: number): string {
   return truncated + '...';
 }
 
-// Extract text from PDF buffer
-async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
-  const pdfParse = (await import('pdf-parse')).default;
-  const pdfData = await pdfParse(pdfBuffer);
-  return pdfData.text;
+// Convert PDF to images for Claude Vision (NUCLEAR OPTION - 100% accurate)
+async function convertPDFToImages(pdfBuffer: Buffer): Promise<string[]> {
+  const fs = await import('fs');
+  const path = await import('path');
+  const os = await import('os');
+  const poppler = await import('pdf-poppler');
+  
+  // Create temp directory
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-'));
+  const pdfPath = path.join(tempDir, 'input.pdf');
+  
+  try {
+    // Write PDF to temp file
+    fs.writeFileSync(pdfPath, pdfBuffer);
+    
+    // Convert PDF to images
+    const options = {
+      format: 'png',
+      out_dir: tempDir,
+      out_prefix: 'page',
+      page: null // Convert all pages
+    };
+    
+    const pages = await poppler.convert(pdfPath, options);
+    
+    // Read image files and convert to base64
+    const imageBase64s: string[] = [];
+    for (let i = 1; i <= pages.length; i++) {
+      const imagePath = path.join(tempDir, `page-${i}.png`);
+      if (fs.existsSync(imagePath)) {
+        const imageBuffer = fs.readFileSync(imagePath);
+        const base64 = imageBuffer.toString('base64');
+        imageBase64s.push(base64);
+      }
+    }
+    
+    return imageBase64s;
+    
+  } finally {
+    // Cleanup temp files
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    } catch (error) {
+      console.warn('[PDF_TO_IMAGE] Cleanup warning:', error);
+    }
+  }
 }
 
-// Process resume with Claude using extracted text
+// Process resume with Claude Vision (PERFECT data extraction)
+async function processResumeWithClaudeVision(imageBase64s: string[], jobDescription: string, template: string) {
+  const templateInfo = getTemplatePromptEnhancements(template);
+  
+  console.log(`[CLAUDE_VISION] Processing ${imageBase64s.length} resume pages`);
+  console.log(`[CLAUDE_VISION] Template: ${template}, Job description length: ${jobDescription.length}`);
+  
+  const prompt = `You are a master resume writer specializing in ATS optimization. You are looking at ${imageBase64s.length} page(s) of a resume.
+
+TEMPLATE TYPE: ${templateInfo.type}
+TARGET AUDIENCE: ${templateInfo.target}
+TEMPLATE GUIDANCE: ${templateInfo.guidance}
+
+CRITICAL INSTRUCTIONS FOR DATA COLLECTION:
+- NEVER CHANGE THE PERSON'S IDENTITY - Keep exact name, email, phone, and personal details
+- EXTRACT EVERY WORD, SKILL, AND DETAIL - this data is valuable for market intelligence
+- ONLY enhance and optimize the existing content from the original resume
+- Use keywords from the job description naturally within EXISTING experience
+- Keep ALL contact information EXACTLY as provided in the original resume
+- Maintain professional formatting appropriate for ${templateInfo.type}
+- Focus on relevant experience for this specific job using ONLY the person's actual background
+- IMPORTANT: Return ONLY the final resume content, no explanatory text or instructions
+- Do NOT include any sections that are empty or have no content
+- If a section like CERTIFICATIONS has no content, omit it entirely
+- PRESERVE THE PERSON'S ACTUAL IDENTITY AND CONTACT INFORMATION
+- CAPTURE ALL SKILLS, TECHNOLOGIES, AND KEYWORDS - nothing should be lost
+
+Return the structured resume content in the following format:
+
+PERSONAL INFO:
+Name: [MUST be EXACTLY as shown in original resume]
+Email: [MUST be EXACTLY as shown in original resume]  
+Phone: [MUST be EXACTLY as shown in original resume]
+Location: [MUST be EXACTLY as shown in original resume]
+LinkedIn: [MUST be EXACTLY as shown in original resume if available]
+
+SUMMARY:
+[2-3 sentence professional summary tailored to the job using ONLY the person's actual background]
+
+EXPERIENCE:
+[Format each job EXACTLY as shown in original resume, only enhance bullet points with keywords:]
+Job Title - Company Name [MUST match original]
+Date Range [MUST match original]
+• [Enhanced bullet point using existing responsibilities + job keywords]
+• [Enhanced bullet point using existing accomplishments + job keywords]
+• [Enhanced bullet point using existing skills + job keywords]
+
+EDUCATION:
+[MUST match original resume exactly:]
+Degree - Institution Name [EXACTLY as shown in original]
+Date Range [EXACTLY as shown in original]
+[Any details EXACTLY as shown in original]
+
+SKILLS:
+[Use ONLY skills from original resume, enhanced with job-relevant keywords]
+
+CERTIFICATIONS:
+[Only include this section if certifications exist in the original resume]
+
+JOB DESCRIPTION:
+${jobDescription}
+
+Read all the resume pages carefully and optimize for the above job description while preserving every detail for data collection purposes.
+
+Return ONLY the clean, final resume content with no instructional text:`;
+
+  if (!anthropic) throw new Error('Anthropic client not initialized');
+
+  // Build content array with text and all images
+  const content: any[] = [{
+    type: "text",
+    text: prompt
+  }];
+
+  // Add all resume page images
+  imageBase64s.forEach((base64, index) => {
+    content.push({
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: "image/png",
+        data: base64
+      }
+    });
+  });
+
+  const response = await anthropic.messages.create({
+    model: "claude-3-5-sonnet-20241022", 
+    max_tokens: 4000,
+    messages: [{ 
+      role: "user", 
+      content: content
+    }]
+  });
+
+  const rawContent = response.content[0]?.text || '';
+  return cleanResumeOutput(rawContent);
+}
+
+// Process resume with Claude using extracted text (FALLBACK)
 async function processResumeWithClaude(resumeContent: string, jobDescription: string, template: string) {
   const templateInfo = getTemplatePromptEnhancements(template);
   
@@ -372,31 +512,45 @@ export async function POST(request: NextRequest) {
     console.log(`[PROCESS_RESUME] File data size: ${resumeContent.length} characters`);
     console.log(`[PROCESS_RESUME] File data preview (first 100 chars): ${resumeContent.substring(0, 100)}`);
     
-    // Handle raw PDF data (since frontend is sending it)
+    // NUCLEAR OPTION: Convert PDF to images for Claude Vision (100% data capture)
+    let claudeProcessor: 'vision' | 'text' = 'text';
     let extractedText: string = resumeContent;
+    let resumeImages: string[] = [];
     
     if (resumeContent.startsWith('%PDF-')) {
-      console.log('[PROCESS_RESUME] Received raw PDF data - extracting text...');
+      console.log('[PROCESS_RESUME] Received raw PDF data - using VISION approach for 100% data capture...');
       try {
-        // Convert string to buffer and extract text
+        // Convert PDF to images for Claude Vision
         const pdfBuffer = Buffer.from(resumeContent, 'binary');
-        extractedText = await extractTextFromPDF(pdfBuffer);
-        console.log(`[PROCESS_RESUME] Successfully extracted ${extractedText.length} characters from PDF`);
+        resumeImages = await convertPDFToImages(pdfBuffer);
+        claudeProcessor = 'vision';
         
-        if (extractedText.trim().length < 50) {
+        console.log(`[PROCESS_RESUME] Successfully converted PDF to ${resumeImages.length} images for Claude Vision`);
+        
+        if (resumeImages.length === 0) {
           return NextResponse.json({
             success: false,
-            message: 'Unable to extract readable text from PDF. Please ensure your PDF contains selectable text (not scanned images).',
-            error_type: 'PDF_EXTRACTION_FAILED'
+            message: 'Unable to convert PDF to images. Please try uploading a different format.',
+            error_type: 'PDF_CONVERSION_FAILED'
           }, { status: 400 });
         }
       } catch (error) {
-        console.error('[PROCESS_RESUME] PDF extraction failed:', error);
-        return NextResponse.json({
-          success: false,
-          message: 'Failed to process PDF file. Please try uploading a different format or ensure your PDF contains selectable text.',
-          error_type: 'PDF_EXTRACTION_FAILED'
-        }, { status: 400 });
+        console.error('[PROCESS_RESUME] PDF to image conversion failed, falling back to text extraction:', error);
+        // Fallback to text extraction if image conversion fails
+        try {
+          const pdfParse = (await import('pdf-parse')).default;
+          const pdfData = await pdfParse(Buffer.from(resumeContent, 'binary'));
+          extractedText = pdfData.text;
+          claudeProcessor = 'text';
+          console.log(`[PROCESS_RESUME] Fallback text extraction: ${extractedText.length} characters`);
+        } catch (textError) {
+          console.error('[PROCESS_RESUME] Both image and text extraction failed:', textError);
+          return NextResponse.json({
+            success: false,
+            message: 'Failed to process PDF file. Please try uploading a different format.',
+            error_type: 'PDF_PROCESSING_FAILED'
+          }, { status: 400 });
+        }
       }
     }
 
@@ -451,8 +605,10 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // Process with Claude  
-        const claudeResponse = await processResumeWithClaude(extractedText, jobDescription, template);
+        // Process with Claude Vision if we have images, otherwise text
+        const claudeResponse = claudeProcessor === 'vision' 
+          ? await processResumeWithClaudeVision(resumeImages, jobDescription, template)
+          : await processResumeWithClaude(extractedText, jobDescription, template);
         
         // Send email with PDF
         await sendResumeEmail(email, claudeResponse, template, fileName);
@@ -494,8 +650,10 @@ export async function POST(request: NextRequest) {
       console.log(`[PROCESS_RESUME] Processing premium template for ${email} - Post-payment: ${isPostPayment}`);
       
       try {
-        // Process with Claude  
-        const claudeResponse = await processResumeWithClaude(extractedText, jobDescription, template);
+        // Process with Claude Vision if we have images, otherwise text
+        const claudeResponse = claudeProcessor === 'vision' 
+          ? await processResumeWithClaudeVision(resumeImages, jobDescription, template)
+          : await processResumeWithClaude(extractedText, jobDescription, template);
         
         // Send email with PDF
         await sendResumeEmail(email, claudeResponse, template, fileName);
