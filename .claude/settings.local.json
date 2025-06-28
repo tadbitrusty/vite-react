@@ -62,7 +62,12 @@
       "Bash(tsc --version)",
       "Bash(git reset:*)",
       "Bash(npm uninstall:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(curl:*)",
+      "mcp__ide__executeCode",
+      "Bash(cat:*)",
+      "Bash(npx:*)",
+      "Bash(./node_modules/.bin/next:*)"
     ],
     "deny": []
   }
