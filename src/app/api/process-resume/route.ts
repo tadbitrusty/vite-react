@@ -788,8 +788,14 @@ export async function POST(request: NextRequest) {
         const pdfUploadResult = await uploadGeneratedPDF(pdfBuffer, fileName, email);
         
         // STEP 7: Store complete intelligence data in database
+        // For PDFs: Don't store binary original_text (causes Unicode errors)
+        // For text files: Store the extracted text for reference
+        const originalTextForStorage = claudeProcessor === 'pdf_vision' 
+          ? null  // PDF processed visually - no text extraction
+          : extractedText;  // Text files - store extracted content
+          
         const intelligenceResult = await storeIntelligenceData(jobResult.jobId, email, {
-          original_text: extractedText,
+          original_text: originalTextForStorage,
           optimized_resume_text: claudeResponse,
           optimized_pdf_path: pdfUploadResult.filePath || undefined,
           ...intelligenceData
@@ -870,8 +876,14 @@ export async function POST(request: NextRequest) {
         const pdfUploadResult = await uploadGeneratedPDF(pdfBuffer, fileName, email);
         
         // STEP 7: Store complete intelligence data in database
+        // For PDFs: Don't store binary original_text (causes Unicode errors)
+        // For text files: Store the extracted text for reference
+        const originalTextForStorage = claudeProcessor === 'pdf_vision' 
+          ? null  // PDF processed visually - no text extraction
+          : extractedText;  // Text files - store extracted content
+          
         const intelligenceResult = await storeIntelligenceData(jobResult.jobId, email, {
-          original_text: extractedText,
+          original_text: originalTextForStorage,
           optimized_resume_text: claudeResponse,
           optimized_pdf_path: pdfUploadResult.filePath || undefined,
           ...intelligenceData
