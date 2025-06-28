@@ -794,11 +794,24 @@ export async function POST(request: NextRequest) {
           ? null  // PDF processed visually - no text extraction
           : extractedText;  // Text files - store extracted content
           
+        // Clean Claude response and intelligence data for Unicode issues
+        const cleanedClaudeResponse = claudeResponse.replace(/\u0000/g, '');
+        const cleanedIntelligenceData = {
+          ...intelligenceData,
+          extracted_skills: intelligenceData.extracted_skills.map(skill => skill.replace(/\u0000/g, '')),
+          keywords: intelligenceData.keywords.map(keyword => keyword.replace(/\u0000/g, '')),
+          job_titles: intelligenceData.job_titles.map(title => title.replace(/\u0000/g, '')),
+          companies: intelligenceData.companies.map(company => company.replace(/\u0000/g, '')),
+          technologies: intelligenceData.technologies.map(tech => tech.replace(/\u0000/g, '')),
+          industry_sectors: intelligenceData.industry_sectors.map(sector => sector.replace(/\u0000/g, '')),
+          job_description_keywords: intelligenceData.job_description_keywords.map(keyword => keyword.replace(/\u0000/g, ''))
+        };
+        
         const intelligenceResult = await storeIntelligenceData(jobResult.jobId, email, {
           original_text: originalTextForStorage,
-          optimized_resume_text: claudeResponse,
+          optimized_resume_text: cleanedClaudeResponse,
           optimized_pdf_path: pdfUploadResult.filePath || undefined,
-          ...intelligenceData
+          ...cleanedIntelligenceData
         });
         
         if (!intelligenceResult.success) {
@@ -882,11 +895,24 @@ export async function POST(request: NextRequest) {
           ? null  // PDF processed visually - no text extraction
           : extractedText;  // Text files - store extracted content
           
+        // Clean Claude response and intelligence data for Unicode issues
+        const cleanedClaudeResponse = claudeResponse.replace(/\u0000/g, '');
+        const cleanedIntelligenceData = {
+          ...intelligenceData,
+          extracted_skills: intelligenceData.extracted_skills.map(skill => skill.replace(/\u0000/g, '')),
+          keywords: intelligenceData.keywords.map(keyword => keyword.replace(/\u0000/g, '')),
+          job_titles: intelligenceData.job_titles.map(title => title.replace(/\u0000/g, '')),
+          companies: intelligenceData.companies.map(company => company.replace(/\u0000/g, '')),
+          technologies: intelligenceData.technologies.map(tech => tech.replace(/\u0000/g, '')),
+          industry_sectors: intelligenceData.industry_sectors.map(sector => sector.replace(/\u0000/g, '')),
+          job_description_keywords: intelligenceData.job_description_keywords.map(keyword => keyword.replace(/\u0000/g, ''))
+        };
+        
         const intelligenceResult = await storeIntelligenceData(jobResult.jobId, email, {
           original_text: originalTextForStorage,
-          optimized_resume_text: claudeResponse,
+          optimized_resume_text: cleanedClaudeResponse,
           optimized_pdf_path: pdfUploadResult.filePath || undefined,
-          ...intelligenceData
+          ...cleanedIntelligenceData
         });
         
         if (!intelligenceResult.success) {
