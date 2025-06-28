@@ -193,17 +193,11 @@ export default function Home() {
       )}
       <div className="max-w-5xl mx-auto">
         
-        {/* Header */}
-        <header className="text-center mb-16">
-          <div className="flex items-center justify-center mb-6">
-            <Target className="w-12 h-12 text-[#4a90a4] mr-4" />
-            <h1 className="text-[#4a90a4] text-5xl md:text-6xl font-bold" style={{ fontFamily: 'Crimson Text, serif' }}>
-              Resume Vita
-            </h1>
-          </div>
-          <p className="text-white text-2xl md:text-3xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
+        {/* Hero Section */}
+        <header className="text-center mb-16 pt-8">
+          <h1 className="text-white text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Crimson Text, serif' }}>
             Breathing Life Into Your Resume
-          </p>
+          </h1>
           <div className="max-w-3xl mx-auto mb-8">
             <p className="text-gray-300 text-lg mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               I'm an engineer with multiple degrees and skills gathered over a lifetime. My original goal was to help working people succeed. But I discovered that HR systems are designed to filter out qualified candidates - 75% get passed over because their resume doesn't have the exact keywords.
