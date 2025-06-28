@@ -67,62 +67,14 @@ function truncateContent(content: string, maxLength: number): string {
   return truncated + '...';
 }
 
-// Convert PDF to images for Claude Vision (NUCLEAR OPTION - 100% accurate)
-async function convertPDFToImages(pdfBuffer: Buffer): Promise<string[]> {
-  const fs = await import('fs');
-  const path = await import('path');
-  const os = await import('os');
-  const poppler = await import('pdf-poppler');
-  
-  // Create temp directory
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-'));
-  const pdfPath = path.join(tempDir, 'input.pdf');
-  
-  try {
-    // Write PDF to temp file
-    fs.writeFileSync(pdfPath, pdfBuffer);
-    
-    // Convert PDF to images
-    const options = {
-      format: 'png',
-      out_dir: tempDir,
-      out_prefix: 'page',
-      page: null // Convert all pages
-    };
-    
-    const pages = await poppler.convert(pdfPath, options);
-    
-    // Read image files and convert to base64
-    const imageBase64s: string[] = [];
-    for (let i = 1; i <= pages.length; i++) {
-      const imagePath = path.join(tempDir, `page-${i}.png`);
-      if (fs.existsSync(imagePath)) {
-        const imageBuffer = fs.readFileSync(imagePath);
-        const base64 = imageBuffer.toString('base64');
-        imageBase64s.push(base64);
-      }
-    }
-    
-    return imageBase64s;
-    
-  } finally {
-    // Cleanup temp files
-    try {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    } catch (error) {
-      console.warn('[PDF_TO_IMAGE] Cleanup warning:', error);
-    }
-  }
-}
-
-// Process resume with Claude Vision (PERFECT data extraction)
-async function processResumeWithClaudeVision(imageBase64s: string[], jobDescription: string, template: string) {
+// Process PDF directly with Claude Vision (SERVERLESS COMPATIBLE)
+async function processPDFWithClaudeVision(pdfBuffer: Buffer, jobDescription: string, template: string) {
   const templateInfo = getTemplatePromptEnhancements(template);
   
-  console.log(`[CLAUDE_VISION] Processing ${imageBase64s.length} resume pages`);
-  console.log(`[CLAUDE_VISION] Template: ${template}, Job description length: ${jobDescription.length}`);
+  console.log(`[CLAUDE_VISION_PDF] Processing PDF directly with Claude Vision`);
+  console.log(`[CLAUDE_VISION_PDF] Template: ${template}, Job description length: ${jobDescription.length}`);
   
-  const prompt = `You are a master resume writer specializing in ATS optimization. You are looking at ${imageBase64s.length} page(s) of a resume.
+  const prompt = `You are a master resume writer specializing in ATS optimization. You are looking at a PDF resume document.
 
 TEMPLATE TYPE: ${templateInfo.type}
 TARGET AUDIENCE: ${templateInfo.target}
@@ -177,29 +129,30 @@ CERTIFICATIONS:
 JOB DESCRIPTION:
 ${jobDescription}
 
-Read all the resume pages carefully and optimize for the above job description while preserving every detail for data collection purposes.
+Read the PDF resume carefully and optimize for the above job description while preserving every detail for data collection purposes.
 
 Return ONLY the clean, final resume content with no instructional text:`;
 
   if (!anthropic) throw new Error('Anthropic client not initialized');
 
-  // Build content array with text and all images
-  const content: any[] = [{
-    type: "text",
-    text: prompt
-  }];
-
-  // Add all resume page images
-  imageBase64s.forEach((base64, index) => {
-    content.push({
-      type: "image",
+  // Convert PDF to base64 for Claude Vision
+  const base64PDF = pdfBuffer.toString('base64');
+  
+  // Build content array with text and PDF
+  const content: any[] = [
+    {
+      type: "text",
+      text: prompt
+    },
+    {
+      type: "document",
       source: {
         type: "base64",
-        media_type: "image/png",
-        data: base64
+        media_type: "application/pdf",
+        data: base64PDF
       }
-    });
-  });
+    }
+  ];
 
   const response = await anthropic.messages.create({
     model: "claude-3-5-sonnet-20241022", 
@@ -213,6 +166,7 @@ Return ONLY the clean, final resume content with no instructional text:`;
   const rawContent = response.content[0]?.text || '';
   return cleanResumeOutput(rawContent);
 }
+
 
 // Process resume with Claude using extracted text (FALLBACK)
 async function processResumeWithClaude(resumeContent: string, jobDescription: string, template: string) {
@@ -512,31 +466,23 @@ export async function POST(request: NextRequest) {
     console.log(`[PROCESS_RESUME] File data size: ${resumeContent.length} characters`);
     console.log(`[PROCESS_RESUME] File data preview (first 100 chars): ${resumeContent.substring(0, 100)}`);
     
-    // NUCLEAR OPTION: Convert PDF to images for Claude Vision (100% data capture)
-    let claudeProcessor: 'vision' | 'text' = 'text';
+    // SERVERLESS PDF PROCESSING: Direct Claude Vision (100% data capture)
+    let claudeProcessor: 'pdf_vision' | 'text' = 'text';
     let extractedText: string = resumeContent;
-    let resumeImages: string[] = [];
+    let pdfBuffer: Buffer | null = null;
     
     if (resumeContent.startsWith('%PDF-')) {
-      console.log('[PROCESS_RESUME] Received raw PDF data - using VISION approach for 100% data capture...');
+      console.log('[PROCESS_RESUME] Received raw PDF data - using direct Claude Vision for 100% data capture...');
       try {
-        // Convert PDF to images for Claude Vision
-        const pdfBuffer = Buffer.from(resumeContent, 'binary');
-        resumeImages = await convertPDFToImages(pdfBuffer);
-        claudeProcessor = 'vision';
+        // Prepare PDF for Claude Vision
+        pdfBuffer = Buffer.from(resumeContent, 'binary');
+        claudeProcessor = 'pdf_vision';
         
-        console.log(`[PROCESS_RESUME] Successfully converted PDF to ${resumeImages.length} images for Claude Vision`);
+        console.log(`[PROCESS_RESUME] PDF prepared for direct Claude Vision processing`);
         
-        if (resumeImages.length === 0) {
-          return NextResponse.json({
-            success: false,
-            message: 'Unable to convert PDF to images. Please try uploading a different format.',
-            error_type: 'PDF_CONVERSION_FAILED'
-          }, { status: 400 });
-        }
       } catch (error) {
-        console.error('[PROCESS_RESUME] PDF to image conversion failed, falling back to text extraction:', error);
-        // Fallback to text extraction if image conversion fails
+        console.error('[PROCESS_RESUME] PDF preparation failed, falling back to text extraction:', error);
+        // Fallback to text extraction if PDF preparation fails
         try {
           const pdfParse = (await import('pdf-parse')).default;
           const pdfData = await pdfParse(Buffer.from(resumeContent, 'binary'));
@@ -544,7 +490,7 @@ export async function POST(request: NextRequest) {
           claudeProcessor = 'text';
           console.log(`[PROCESS_RESUME] Fallback text extraction: ${extractedText.length} characters`);
         } catch (textError) {
-          console.error('[PROCESS_RESUME] Both image and text extraction failed:', textError);
+          console.error('[PROCESS_RESUME] Both PDF and text extraction failed:', textError);
           return NextResponse.json({
             success: false,
             message: 'Failed to process PDF file. Please try uploading a different format.',
@@ -605,9 +551,9 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // Process with Claude Vision if we have images, otherwise text
-        const claudeResponse = claudeProcessor === 'vision' 
-          ? await processResumeWithClaudeVision(resumeImages, jobDescription, template)
+        // Process with Claude PDF Vision or text extraction
+        const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBuffer
+          ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template)
           : await processResumeWithClaude(extractedText, jobDescription, template);
         
         // Send email with PDF
@@ -650,9 +596,9 @@ export async function POST(request: NextRequest) {
       console.log(`[PROCESS_RESUME] Processing premium template for ${email} - Post-payment: ${isPostPayment}`);
       
       try {
-        // Process with Claude Vision if we have images, otherwise text
-        const claudeResponse = claudeProcessor === 'vision' 
-          ? await processResumeWithClaudeVision(resumeImages, jobDescription, template)
+        // Process with Claude PDF Vision or text extraction
+        const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBuffer
+          ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template)
           : await processResumeWithClaude(extractedText, jobDescription, template);
         
         // Send email with PDF
