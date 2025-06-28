@@ -11,6 +11,21 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
   }
 });
 
+// Create admin client that definitely uses service role
+const getAdminClient = () => {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY not found');
+  }
+  
+  return createClient(supabaseUrl, serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+};
+
 export interface FileUploadResult {
   success: boolean;
   filePath?: string;
@@ -73,6 +88,8 @@ export async function uploadResumeFile(
 ): Promise<FileUploadResult & { fileRecord?: ResumeFileRecord }> {
   try {
     console.log(`[STORAGE] Uploading resume file: ${file.name} for ${userEmail}`);
+    console.log(`[STORAGE] Using Supabase key ending in: ...${supabaseKey.slice(-10)}`);
+    console.log(`[STORAGE] Service role key available: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
     
     // Generate unique file path
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -104,8 +121,9 @@ export async function uploadResumeFile(
     
     console.log(`[STORAGE] File uploaded successfully: ${uploadData.path}`);
     
-    // Create database record using service role to bypass RLS
-    const { data: fileRecord, error: dbError } = await supabase
+    // Create database record using admin client to bypass RLS
+    const adminClient = getAdminClient();
+    const { data: fileRecord, error: dbError } = await adminClient
       .from('resume_files')
       .insert({
         user_email: userEmail,
@@ -160,7 +178,8 @@ export async function createProcessingJob(
   try {
     console.log(`[STORAGE] Creating processing job for file: ${resumeFileId}`);
     
-    const { data: jobRecord, error } = await supabase
+    const adminClient = getAdminClient();
+    const { data: jobRecord, error } = await adminClient
       .from('resume_processing_jobs')
       .insert({
         resume_file_id: resumeFileId,
@@ -211,7 +230,8 @@ export async function updateProcessingJobStatus(
       ...(metadata ? { processing_metadata: metadata } : {})
     };
     
-    const { error } = await supabase
+    const adminClient = getAdminClient();
+    const { error } = await adminClient
       .from('resume_processing_jobs')
       .update(updateData)
       .eq('id', jobId);
@@ -244,7 +264,8 @@ export async function storeIntelligenceData(
   try {
     console.log(`[STORAGE] Storing intelligence data for job: ${processingJobId}`);
     
-    const { data: intelligenceRecord, error } = await supabase
+    const adminClient = getAdminClient();
+    const { data: intelligenceRecord, error } = await adminClient
       .from('resume_intelligence')
       .insert({
         processing_job_id: processingJobId,
