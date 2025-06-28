@@ -730,12 +730,13 @@ export async function POST(request: NextRequest) {
       try {
         const base64Content = resumeContent.split(',')[1];
         const textContent = Buffer.from(base64Content, 'base64').toString('utf-8');
-        extractedText = textContent;
+        // Clean null bytes immediately for DOCX/binary files
+        extractedText = textContent.replace(/\u0000/g, '');
         claudeProcessor = 'text';
-        console.log(`[STORAGE_PIPELINE] Text extracted: ${extractedText.length} characters`);
+        console.log(`[STORAGE_PIPELINE] Text extracted and cleaned: ${extractedText.length} characters`);
       } catch (error) {
         console.error('[STORAGE_PIPELINE] Text extraction failed:', error);
-        extractedText = resumeContent; // Use as-is
+        extractedText = resumeContent.replace(/\u0000/g, ''); // Use as-is but cleaned
       }
     }
 
@@ -808,10 +809,10 @@ export async function POST(request: NextRequest) {
         
         // STEP 7: Store complete intelligence data in database
         // For PDFs: Don't store binary original_text (causes Unicode errors)
-        // For text files: Store the extracted text for reference
+        // For text files: Store the extracted text for reference, cleaned of null bytes
         const originalTextForStorage = claudeProcessor === 'pdf_vision' 
           ? null  // PDF processed visually - no text extraction
-          : extractedText;  // Text files - store extracted content
+          : extractedText.replace(/\u0000/g, '');  // Text files - store cleaned extracted content
           
         // Clean Claude response and intelligence data for Unicode issues
         const cleanedClaudeResponse = claudeResponse.replace(/\u0000/g, '');
@@ -909,10 +910,10 @@ export async function POST(request: NextRequest) {
         
         // STEP 7: Store complete intelligence data in database
         // For PDFs: Don't store binary original_text (causes Unicode errors)
-        // For text files: Store the extracted text for reference
+        // For text files: Store the extracted text for reference, cleaned of null bytes
         const originalTextForStorage = claudeProcessor === 'pdf_vision' 
           ? null  // PDF processed visually - no text extraction
-          : extractedText;  // Text files - store extracted content
+          : extractedText.replace(/\u0000/g, '');  // Text files - store cleaned extracted content
           
         // Clean Claude response and intelligence data for Unicode issues
         const cleanedClaudeResponse = claudeResponse.replace(/\u0000/g, '');
