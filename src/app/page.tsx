@@ -119,21 +119,87 @@ export default function Home() {
   const readFileContent = async (file: File): Promise<string> => {
     console.log(`[FRONTEND] Preparing file for Claude: ${file.name} (${file.type})`);
     
-    // For all files, convert to base64 with data URL for backend processing
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        console.log(`[FRONTEND] File converted to data URL, size: ${dataUrl.length}`);
-        console.log(`[FRONTEND] Data URL preview: ${dataUrl.substring(0, 100)}...`);
-        resolve(dataUrl);
-      };
-      reader.onerror = (error) => {
-        console.error('[FRONTEND] File reading error:', error);
-        reject(error);
-      };
-      reader.readAsDataURL(file);
-    });
+    // Use ArrayBuffer for PDFs to prevent corruption, DataURL for text files
+    if (file.type === 'application/pdf') {
+      console.log(`[FRONTEND] Processing PDF with ArrayBuffer to prevent corruption`);
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const arrayBuffer = reader.result as ArrayBuffer;
+            
+            // For large files, use chunked processing to avoid memory issues
+            if (arrayBuffer.byteLength > 5 * 1024 * 1024) { // 5MB threshold
+              console.log(`[FRONTEND] Large PDF detected (${arrayBuffer.byteLength} bytes), using chunked processing`);
+            }
+            
+            const uint8Array = new Uint8Array(arrayBuffer);
+            
+            // Convert to base64 using browser-optimized method for large files
+            let base64 = '';
+            try {
+              if (arrayBuffer.byteLength > 10 * 1024 * 1024) { // 10MB threshold
+                // For very large files, process in chunks to avoid "Maximum call stack size exceeded"
+                const chunkSize = 8192;
+                for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                  const chunk = uint8Array.slice(i, i + chunkSize);
+                  base64 += btoa(String.fromCharCode.apply(null, Array.from(chunk)));
+                }
+              } else {
+                base64 = btoa(String.fromCharCode(...uint8Array));
+              }
+            } catch (error) {
+              console.warn('[FRONTEND] ArrayBuffer method failed, falling back to DataURL:', error);
+              // Fallback to original method if ArrayBuffer conversion fails
+              const fallbackReader = new FileReader();
+              fallbackReader.onload = () => {
+                const dataUrl = fallbackReader.result as string;
+                console.log(`[FRONTEND] PDF fallback conversion successful, size: ${dataUrl.length}`);
+                resolve(dataUrl);
+              };
+              fallbackReader.onerror = reject;
+              fallbackReader.readAsDataURL(file);
+              return;
+            }
+            
+            const dataUrl = `data:application/pdf;base64,${base64}`;
+            console.log(`[FRONTEND] PDF converted via ArrayBuffer, size: ${dataUrl.length}`);
+            console.log(`[FRONTEND] PDF base64 preview: ${base64.substring(0, 50)}...`);
+            
+            // Validate the base64 is properly formatted
+            if (base64.length < 100 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64.substring(0, 100))) {
+              throw new Error('Generated base64 appears invalid');
+            }
+            
+            resolve(dataUrl);
+          } catch (error) {
+            console.error('[FRONTEND] PDF ArrayBuffer processing failed:', error);
+            reject(error);
+          }
+        };
+        reader.onerror = (error) => {
+          console.error('[FRONTEND] PDF reading error:', error);
+          reject(error);
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    } else {
+      // For text files, use data URL method
+      console.log(`[FRONTEND] Processing text file with DataURL method`);
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          console.log(`[FRONTEND] Text file converted to data URL, size: ${dataUrl.length}`);
+          resolve(dataUrl);
+        };
+        reader.onerror = (error) => {
+          console.error('[FRONTEND] File reading error:', error);
+          reject(error);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,9 +292,9 @@ export default function Home() {
             <label className="block text-[#4a90a4] text-xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Step 2: Upload Your Resume
             </label>
-            <div className="bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-lg p-3 mb-4">
-              <p className="text-yellow-200 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
-                ⚠️ Please don't use PDFs for now - I'm working on a fix. Use DOC, DOCX, or TXT files instead.
+            <div className="bg-blue-900 bg-opacity-30 border border-blue-600 rounded-lg p-3 mb-4">
+              <p className="text-blue-200 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+                🔧 <strong>PDF Processing Enhanced:</strong> We've improved PDF handling to work better with Claude Vision. Testing in progress.
               </p>
             </div>
             <div className="border-2 border-dashed border-[#4a90a4] border-opacity-30 rounded-lg p-8 text-center hover:border-opacity-50 transition-colors">

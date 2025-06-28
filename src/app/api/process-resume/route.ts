@@ -680,10 +680,29 @@ export async function POST(request: NextRequest) {
       try {
         // Extract base64 from data URL
         pdfBase64 = resumeContent.split(',')[1];
+        
+        // Validate base64 content before processing
+        if (!pdfBase64 || pdfBase64.length < 100) {
+          throw new Error(`Invalid PDF base64 data: length=${pdfBase64?.length || 0}`);
+        }
+        
+        // Validate base64 format
+        if (!/^[A-Za-z0-9+/]*={0,2}$/.test(pdfBase64)) {
+          throw new Error('Invalid base64 format detected');
+        }
+        
         pdfBuffer = Buffer.from(pdfBase64, 'base64');
+        
+        // Validate PDF header (PDFs start with %PDF)
+        const pdfHeader = pdfBuffer.toString('ascii', 0, 4);
+        if (pdfHeader !== '%PDF') {
+          throw new Error(`Invalid PDF format: header="${pdfHeader}" (expected "%PDF")`);
+        }
+        
         claudeProcessor = 'pdf_vision';
         
-        console.log(`[STORAGE_PIPELINE] PDF prepared for Claude Vision (size: ${pdfBuffer.length} bytes)`);
+        console.log(`[STORAGE_PIPELINE] PDF validated and prepared for Claude Vision (size: ${pdfBuffer.length} bytes)`);
+        console.log(`[STORAGE_PIPELINE] PDF header confirmed: ${pdfHeader}`);
         
       } catch (error) {
         console.error('[STORAGE_PIPELINE] PDF processing failed, falling back to text extraction:', error);
