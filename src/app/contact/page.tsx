@@ -46,6 +46,53 @@ export default function ContactPage() {
     message: '',
     type: 'general'
   });
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What should I do if my resume isn't getting responses?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Try uploading a different file format (PDF, DOCX, TXT) or check if your resume has the right ATS keywords. 75% of qualified candidates get rejected due to missing keywords or formatting issues."
+        }
+      },
+      {
+        "@type": "Question", 
+        "name": "Why didn't I receive my resume email?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Check your spam folder or wait 2-3 minutes for delivery. Processing typically takes 30-60 seconds, and emails are sent immediately after completion."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I resolve payment issues with Resume Vita?",
+        "acceptedAnswer": {
+          "@type": "Answer", 
+          "text": "Contact us with your transaction ID for quick resolution. We offer transparent, one-time pricing with no hidden subscription fees."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What file formats does Resume Vita support?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Resume Vita supports PDF, DOCX, DOC, TXT, and RTF files up to 10MB. All formats work with our AI-powered optimization system."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How long does Resume Vita take to process resumes?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Resume processing typically takes 30-60 seconds. You'll receive your optimized resume via email within 2-3 minutes of submission."
+        }
+      }
+    ]
+  };
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error' | 'info', message: string} | null>(null);
@@ -116,14 +163,21 @@ export default function ContactPage() {
   ];
 
   return (
-    <div className="min-h-screen relative px-4 py-8 md:py-16 gradient-bg">
-      {notification && (
-        <Notification 
-          type={notification.type}
-          message={notification.message}
-          onClose={() => setNotification(null)}
-        />
-      )}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema)
+        }}
+      />
+      <div className="min-h-screen relative px-4 py-8 md:py-16 gradient-bg">
+        {notification && (
+          <Notification 
+            type={notification.type}
+            message={notification.message}
+            onClose={() => setNotification(null)}
+          />
+        )}
       
       <div className="max-w-4xl mx-auto">
         
@@ -379,5 +433,6 @@ export default function ContactPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
