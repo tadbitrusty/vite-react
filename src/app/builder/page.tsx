@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, Target, CheckCircle, AlertCircle, Upload, FileText } from 'lucide-react';
+import { Target, CheckCircle, AlertCircle, Upload, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { RESUME_BUILDER_PRICING, API_ENDPOINTS, FILE_CONFIG } from '@/constants';
 
@@ -155,11 +155,29 @@ export default function ResumeBuilder() {
         showNotification('success', 'Resume parsed successfully! Review and edit the auto-filled information below.');
         setShowUploadSection(false);
       } else {
-        showNotification('error', result.message || 'Failed to parse resume');
+        // Enhanced error handling for different file types
+        const fileType = file.type.includes('pdf') ? 'PDF' : 
+                        file.type.includes('word') || file.type.includes('document') ? 'DOCX' : 
+                        'text';
+        const errorMsg = result.message || `Failed to parse ${fileType} resume`;
+        
+        if (fileType === 'DOCX' && errorMsg.includes('processing')) {
+          showNotification('error', 'DOCX processing failed. Try saving your resume as PDF and uploading that instead.');
+        } else {
+          showNotification('error', errorMsg);
+        }
       }
     } catch (error) {
       console.error('Resume parsing error:', error);
-      showNotification('error', 'Failed to parse resume. Please try again.');
+      const fileType = file.type.includes('pdf') ? 'PDF' : 
+                      file.type.includes('word') || file.type.includes('document') ? 'DOCX' : 
+                      'text';
+      
+      if (fileType === 'DOCX') {
+        showNotification('error', 'DOCX file processing failed. Please try saving as PDF or check file integrity.');
+      } else {
+        showNotification('error', 'Failed to parse resume. Please try again.');
+      }
     } finally {
       setIsParsing(false);
     }
@@ -281,7 +299,6 @@ export default function ResumeBuilder() {
     setFormData({
       ...formData,
       experience: [
-        ...formData.experience,
         {
           company: '',
           title: '',
@@ -291,6 +308,7 @@ export default function ResumeBuilder() {
           current: false,
           description: '',
         },
+        ...formData.experience,
       ],
     });
   };
@@ -299,7 +317,6 @@ export default function ResumeBuilder() {
     setFormData({
       ...formData,
       education: [
-        ...formData.education,
         {
           school: '',
           degree: '',
@@ -307,6 +324,7 @@ export default function ResumeBuilder() {
           graduationDate: '',
           gpa: '',
         },
+        ...formData.education,
       ],
     });
   };
@@ -367,23 +385,13 @@ export default function ResumeBuilder() {
       <div className="max-w-4xl mx-auto">
         
         {/* Header */}
-        <header className="text-center mb-16">
-          <div className="flex items-center justify-center mb-6">
-            <Target className="w-12 h-12 text-[#4a90a4] mr-4" />
-            <h1 className="text-[#4a90a4] text-4xl md:text-5xl font-bold" style={{ fontFamily: 'Crimson Text, serif' }}>
-              Resume Builder
-            </h1>
-          </div>
+        <header className="text-center mb-16 pt-8">
+          <h1 className="text-[#4a90a4] text-4xl md:text-5xl font-bold mb-6" style={{ fontFamily: 'Crimson Text, serif' }}>
+            Resume Builder
+          </h1>
           <p className="text-white text-xl md:text-2xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
             Build Your Professional Resume
           </p>
-          <Link 
-            href="/"
-            className="inline-flex items-center text-[#4a90a4] hover:text-[#5ba0b5] transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Resume Optimizer
-          </Link>
         </header>
 
         {/* How to Use Instructions */}
@@ -791,6 +799,70 @@ export default function ResumeBuilder() {
                       }}
                     />
                   </div>
+                  
+                  <div className="grid md:grid-cols-3 gap-4 mb-4">
+                    <input
+                      type="text"
+                      className="w-full bg-[#1a365d] bg-opacity-20 text-white border border-[#4a90a4] border-opacity-30 rounded-lg p-3 focus:border-[#4a90a4] focus:ring-1 focus:ring-[#4a90a4] transition-colors"
+                      placeholder="Location (optional)"
+                      value={exp.location}
+                      onChange={(e) => {
+                        const newExp = [...formData.experience];
+                        if (newExp[index]) {
+                          newExp[index].location = e.target.value;
+                          setFormData({ ...formData, experience: newExp });
+                        }
+                      }}
+                    />
+                    <input
+                      type="text"
+                      className="w-full bg-[#1a365d] bg-opacity-20 text-white border border-[#4a90a4] border-opacity-30 rounded-lg p-3 focus:border-[#4a90a4] focus:ring-1 focus:ring-[#4a90a4] transition-colors"
+                      placeholder="Start Date (MM/YYYY)"
+                      value={exp.startDate}
+                      onChange={(e) => {
+                        const newExp = [...formData.experience];
+                        if (newExp[index]) {
+                          newExp[index].startDate = e.target.value;
+                          setFormData({ ...formData, experience: newExp });
+                        }
+                      }}
+                    />
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        className={`flex-1 bg-[#1a365d] bg-opacity-20 text-white border border-[#4a90a4] border-opacity-30 rounded-lg p-3 focus:border-[#4a90a4] focus:ring-1 focus:ring-[#4a90a4] transition-colors ${exp.current ? 'opacity-50' : ''}`}
+                        placeholder="End Date (MM/YYYY)"
+                        value={exp.current ? 'Present' : exp.endDate}
+                        disabled={exp.current}
+                        onChange={(e) => {
+                          const newExp = [...formData.experience];
+                          if (newExp[index]) {
+                            newExp[index].endDate = e.target.value;
+                            setFormData({ ...formData, experience: newExp });
+                          }
+                        }}
+                      />
+                      <label className="flex items-center text-white text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="mr-2 w-4 h-4 text-[#4a90a4] bg-[#1a365d] border-[#4a90a4] rounded focus:ring-[#4a90a4]"
+                          checked={exp.current}
+                          onChange={(e) => {
+                            const newExp = [...formData.experience];
+                            if (newExp[index]) {
+                              newExp[index].current = e.target.checked;
+                              if (e.target.checked) {
+                                newExp[index].endDate = '';
+                              }
+                              setFormData({ ...formData, experience: newExp });
+                            }
+                          }}
+                        />
+                        Current
+                      </label>
+                    </div>
+                  </div>
+                  
                   <textarea
                     className="w-full h-24 bg-[#1a365d] bg-opacity-20 text-white border border-[#4a90a4] border-opacity-30 rounded-lg p-3 focus:border-[#4a90a4] focus:ring-1 focus:ring-[#4a90a4] transition-colors resize-none"
                     placeholder="Description of responsibilities and achievements..."

@@ -35,15 +35,67 @@ const RESUME_BUILDER_PRICING = {
   }
 };
 
-// Build resume from form data using Claude
-async function buildResumeWithClaude(resumeData: any, tier: string) {
+// Build basic resume from form data (no AI processing)
+function buildBasicResume(resumeData: any): string {
   const { personalInfo, summary, experience, education, skills } = resumeData;
   
-  const enhancedPrompt = tier === 'ENHANCED' ? 
-    'Create an AI-enhanced, compelling professional resume with optimized language, quantified achievements, and ATS-friendly keywords.' :
-    'Create a clean, professional resume with proper formatting and structure.';
+  let resume = '';
+  
+  // Header
+  resume += `${personalInfo.fullName}\n`;
+  resume += `${personalInfo.email} | ${personalInfo.phone} | ${personalInfo.location}\n`;
+  if (personalInfo.linkedin) resume += `LinkedIn: ${personalInfo.linkedin}\n`;
+  if (personalInfo.github) resume += `GitHub: ${personalInfo.github}\n`;
+  resume += '\n';
+  
+  // Professional Summary
+  if (summary) {
+    resume += 'PROFESSIONAL SUMMARY:\n';
+    resume += `${summary}\n\n`;
+  }
+  
+  // Work Experience
+  if (experience && experience.length > 0) {
+    resume += 'WORK EXPERIENCE:\n';
+    experience.forEach((exp: any) => {
+      resume += `${exp.title} | ${exp.company}\n`;
+      if (exp.location) resume += `${exp.location}\n`;
+      if (exp.startDate || exp.endDate) {
+        const duration = `${exp.startDate || 'Start'} - ${exp.current ? 'Present' : (exp.endDate || 'End')}`;
+        resume += `${duration}\n`;
+      }
+      if (exp.description) resume += `${exp.description}\n`;
+      resume += '\n';
+    });
+  }
+  
+  // Education
+  if (education && education.length > 0) {
+    resume += 'EDUCATION:\n';
+    education.forEach((edu: any) => {
+      resume += `${edu.degree} | ${edu.school}\n`;
+      if (edu.location) resume += `${edu.location}\n`;
+      if (edu.graduationDate) resume += `Graduated: ${edu.graduationDate}\n`;
+      if (edu.gpa) resume += `GPA: ${edu.gpa}\n`;
+      resume += '\n';
+    });
+  }
+  
+  // Skills
+  if (skills && (Array.isArray(skills) ? skills.length > 0 : skills)) {
+    resume += 'SKILLS:\n';
+    const skillsText = Array.isArray(skills) ? skills.join(', ') : skills;
+    resume += `${skillsText}\n`;
+  }
+  
+  return resume;
+}
 
-  const prompt = `${enhancedPrompt}
+// Build enhanced resume from form data using Claude AI
+async function buildEnhancedResumeWithClaude(resumeData: any) {
+  const { personalInfo, summary, experience, education, skills } = resumeData;
+  
+  const prompt = `Create an AI-enhanced, compelling professional resume with optimized language, quantified achievements, and ATS-friendly keywords.
 
 Create a professional resume using the following information:
 
@@ -81,7 +133,7 @@ ${edu.gpa ? `GPA: ${edu.gpa}` : ''}
 SKILLS:
 ${Array.isArray(skills) ? skills.join(', ') : skills}
 
-Format this as a professional resume with proper sections and structure. ${tier === 'ENHANCED' ? 'Use compelling language, add relevant keywords, and optimize for ATS systems.' : 'Keep formatting clean and professional.'}`;
+Use compelling language, add relevant keywords, and optimize for ATS systems. Format this as a professional resume with proper sections and structure.`;
 
   if (!anthropic) throw new Error('Anthropic client not initialized');
   
@@ -299,8 +351,10 @@ export async function POST(request: NextRequest) {
     if (session.accountType === 'admin' || session.accountType === 'beta') {
       // Admin and beta users get free access
       try {
-        // Build resume with Claude
-        const resumeContent = await buildResumeWithClaude({ personalInfo, summary, experience, education, skills }, tier);
+        // Build resume based on tier
+        const resumeContent = tier === 'ENHANCED' 
+          ? await buildEnhancedResumeWithClaude({ personalInfo, summary, experience, education, skills })
+          : buildBasicResume({ personalInfo, summary, experience, education, skills });
         
         // Send email with PDF
         await sendBuilderResumeEmail(personalInfo.email, resumeContent, tier, personalInfo);
@@ -342,8 +396,10 @@ export async function POST(request: NextRequest) {
       // Regular users need to pay - in production this would integrate with Stripe
       // For development, we'll process directly but show payment would be required
       try {
-        // Build resume with Claude
-        const resumeContent = await buildResumeWithClaude({ personalInfo, summary, experience, education, skills }, tier);
+        // Build resume based on tier
+        const resumeContent = tier === 'ENHANCED' 
+          ? await buildEnhancedResumeWithClaude({ personalInfo, summary, experience, education, skills })
+          : buildBasicResume({ personalInfo, summary, experience, education, skills });
         
         // Send email with PDF
         await sendBuilderResumeEmail(personalInfo.email, resumeContent, tier, personalInfo);
