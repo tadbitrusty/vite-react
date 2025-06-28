@@ -226,6 +226,11 @@ export default function Home() {
             <label className="block text-[#4a90a4] text-xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Step 2: Upload Your Resume
             </label>
+            <div className="bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-lg p-3 mb-4">
+              <p className="text-yellow-200 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
+                ⚠️ Please don't use PDFs for now - I'm working on a fix. Use DOC, DOCX, or TXT files instead.
+              </p>
+            </div>
             <div className="border-2 border-dashed border-[#4a90a4] border-opacity-30 rounded-lg p-8 text-center hover:border-opacity-50 transition-colors">
               <input
                 type="file"
