@@ -69,12 +69,29 @@ export default function RoadmapPage() {
 
   const roadmapItems: RoadmapItem[] = [
     {
+      id: 'marketing-strategy',
+      title: 'Marketing Strategy & Growth',
+      description: 'SEO optimization, content marketing, competitive positioning, and user acquisition strategy to compete with established players.',
+      icon: <TrendingUp className="w-8 h-8 text-orange-400" />,
+      status: 'in_progress',
+      quarter: 'Current Focus',
+      priority: 'high',
+      features: [
+        'SEO strategy against resumevita.com and major competitors',
+        'Content marketing with educational resume guides',
+        'Social media presence and community building',
+        'Partnership opportunities with career services',
+        'Competitive pricing and positioning strategy',
+        'User testimonial and review collection system'
+      ]
+    },
+    {
       id: 'core-platform',
       title: 'Core Resume Optimization Platform',
       description: 'AI-powered resume optimization with ATS compatibility, PDF/DOCX support, and instant processing.',
       icon: <Zap className="w-8 h-8 text-[#4a90a4]" />,
       status: 'completed',
-      quarter: 'Q1 2024',
+      quarter: 'Completed',
       priority: 'high',
       features: [
         'AI resume optimization with Claude 3.5 Sonnet',
@@ -91,7 +108,7 @@ export default function RoadmapPage() {
       description: 'Build professional resumes from scratch with AI-powered auto-fill and modern templates.',
       icon: <FileText className="w-8 h-8 text-[#4a90a4]" />,
       status: 'completed',
-      quarter: 'Q1 2024',
+      quarter: 'Completed',
       priority: 'high',
       features: [
         'Complete resume builder interface',
@@ -107,7 +124,7 @@ export default function RoadmapPage() {
       description: 'Comprehensive admin tools for user management, analytics, and system monitoring.',
       icon: <BarChart3 className="w-8 h-8 text-blue-400" />,
       status: 'in_progress',
-      quarter: 'Q1 2024',
+      quarter: 'In Progress',
       priority: 'medium',
       features: [
         'User session tracking and analytics',
@@ -122,8 +139,8 @@ export default function RoadmapPage() {
       title: 'Professional Contact System',
       description: 'Integrated contact forms with automated email routing and support ticket system.',
       icon: <MessageSquare className="w-8 h-8 text-green-400" />,
-      status: 'planned',
-      quarter: 'Q2 2024',
+      status: 'completed',
+      quarter: 'Completed',
       priority: 'medium',
       features: [
         'Contact form with Resend integration',
@@ -139,7 +156,7 @@ export default function RoadmapPage() {
       description: 'Native mobile apps for iOS and Android with full resume optimization capabilities.',
       icon: <Smartphone className="w-8 h-8 text-purple-400" />,
       status: 'planned',
-      quarter: 'Q2 2024',
+      quarter: 'Future',
       priority: 'high',
       features: [
         'iOS and Android native apps',
@@ -155,7 +172,7 @@ export default function RoadmapPage() {
       description: 'Competitive analysis tools and comprehensive SEO optimization for better visibility.',
       icon: <Search className="w-8 h-8 text-yellow-400" />,
       status: 'planned',
-      quarter: 'Q2 2024',
+      quarter: 'Next Phase',
       priority: 'medium',
       features: [
         'Competitor keyword analysis',
@@ -169,9 +186,9 @@ export default function RoadmapPage() {
       id: 'ai-enhancements',
       title: 'Next-Gen AI Features',
       description: 'Advanced AI capabilities including interview prep, skill gap analysis, and career coaching.',
-      icon: <Brain className="w-8 h-8 text-orange-400" />,
+      icon: <Brain className="w-8 h-8 text-indigo-400" />,
       status: 'future',
-      quarter: 'Q3 2024',
+      quarter: 'Future',
       priority: 'high',
       features: [
         'AI interview question preparation',
@@ -185,9 +202,9 @@ export default function RoadmapPage() {
       id: 'enterprise-features',
       title: 'Enterprise & Integration Suite',
       description: 'Enterprise-grade features including API access, bulk processing, and third-party integrations.',
-      icon: <Globe className="w-8 h-8 text-indigo-400" />,
+      icon: <Globe className="w-8 h-8 text-cyan-400" />,
       status: 'future',
-      quarter: 'Q4 2024',
+      quarter: 'Future',
       priority: 'medium',
       features: [
         'Public API for developers',
@@ -204,7 +221,7 @@ export default function RoadmapPage() {
       description: 'Advanced security features and compliance certifications for enterprise customers.',
       icon: <Shield className="w-8 h-8 text-red-400" />,
       status: 'future',
-      quarter: 'Q4 2024',
+      quarter: 'Future',
       priority: 'low',
       features: [
         'SOC 2 Type II compliance',

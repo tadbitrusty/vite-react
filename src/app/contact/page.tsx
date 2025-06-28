@@ -282,27 +282,33 @@ export default function ContactPage() {
             {/* Response Time */}
             <div className="card-gradient rounded-lg p-6">
               <h3 className="text-white text-xl font-bold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
-                Response Time
+                Response Time Goals
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-3 mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-green-400 rounded-full" />
                   <span className="text-gray-300 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    Support: 2-6 hours
+                    Support: 2-6 hours (goal)
                   </span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-blue-400 rounded-full" />
                   <span className="text-gray-300 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    General: 24-48 hours
+                    General: 24-48 hours (goal)
                   </span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 bg-purple-400 rounded-full" />
                   <span className="text-gray-300 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    Partnerships: 2-3 days
+                    Partnerships: 2-3 days (goal)
                   </span>
                 </div>
+              </div>
+              <div className="bg-[#1a365d] bg-opacity-30 rounded-lg p-3 border-l-4 border-[#4a90a4]">
+                <p className="text-gray-400 text-xs" style={{ fontFamily: 'Inter, sans-serif' }}>
+                  <strong>Note:</strong> Resume Vita is currently operated by a single person. 
+                  Response times above are goals, actual responses may vary based on current workload.
+                </p>
               </div>
             </div>
 
