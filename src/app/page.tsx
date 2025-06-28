@@ -135,18 +135,18 @@ export default function Home() {
             
             const uint8Array = new Uint8Array(arrayBuffer);
             
-            // Convert to base64 using browser-optimized method for large files
-            let base64 = '';
+            // Convert to base64 using safer method
+            let pdfBase64 = '';
             try {
-              if (arrayBuffer.byteLength > 10 * 1024 * 1024) { // 10MB threshold
-                // For very large files, process in chunks to avoid "Maximum call stack size exceeded"
-                const chunkSize = 8192;
-                for (let i = 0; i < uint8Array.length; i += chunkSize) {
-                  const chunk = uint8Array.slice(i, i + chunkSize);
-                  base64 += btoa(String.fromCharCode.apply(null, Array.from(chunk)));
+              // Use a safer chunked approach for all files to avoid stack overflow
+              const chunkSize = 8192;
+              for (let pos = 0; pos < uint8Array.length; pos += chunkSize) {
+                const chunk = uint8Array.subarray(pos, pos + chunkSize);
+                let chunkString = '';
+                for (let j = 0; j < chunk.length; j++) {
+                  chunkString += String.fromCharCode(chunk[j]);
                 }
-              } else {
-                base64 = btoa(String.fromCharCode(...uint8Array));
+                pdfBase64 += btoa(chunkString);
               }
             } catch (error) {
               console.warn('[FRONTEND] ArrayBuffer method failed, falling back to DataURL:', error);
@@ -162,12 +162,12 @@ export default function Home() {
               return;
             }
             
-            const dataUrl = `data:application/pdf;base64,${base64}`;
+            const dataUrl = `data:application/pdf;base64,${pdfBase64}`;
             console.log(`[FRONTEND] PDF converted via ArrayBuffer, size: ${dataUrl.length}`);
-            console.log(`[FRONTEND] PDF base64 preview: ${base64.substring(0, 50)}...`);
+            console.log(`[FRONTEND] PDF base64 preview: ${pdfBase64.substring(0, 50)}...`);
             
             // Validate the base64 is properly formatted
-            if (base64.length < 100 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64.substring(0, 100))) {
+            if (pdfBase64.length < 100 || !/^[A-Za-z0-9+/]*={0,2}$/.test(pdfBase64.substring(0, 100))) {
               throw new Error('Generated base64 appears invalid');
             }
             
