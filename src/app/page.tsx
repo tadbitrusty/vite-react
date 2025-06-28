@@ -149,6 +149,39 @@ export default function Home() {
     }
   };
 
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // Validate file type
+      if (file.type === 'application/pdf' || 
+          file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+          file.type === 'text/plain') {
+        setResumeFile(file);
+      } else {
+        showNotification('error', 'Please upload a PDF, DOCX, or TXT file');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen relative px-4 py-8 md:py-16 gradient-bg">
       {notification && (
@@ -241,7 +274,13 @@ export default function Home() {
             <label className="block text-[#4a90a4] text-xl font-semibold mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Step 2: Upload Your Resume
             </label>
-            <div className="border-2 border-dashed border-[#4a90a4] border-opacity-30 rounded-lg p-8 text-center hover:border-opacity-50 transition-colors">
+            <div 
+              className="border-2 border-dashed border-[#4a90a4] border-opacity-30 rounded-lg p-8 text-center hover:border-opacity-50 transition-colors"
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <input
                 type="file"
                 accept=".pdf,.docx,.txt"
@@ -256,6 +295,7 @@ export default function Home() {
                 ) : (
                   <>
                     <p className="text-white text-lg mb-2">Click to upload resume</p>
+                    <p className="text-gray-400 text-sm mb-1">or drag and drop here</p>
                     <p className="text-gray-400 text-sm">PDF, DOCX, or TXT files only</p>
                   </>
                 )}

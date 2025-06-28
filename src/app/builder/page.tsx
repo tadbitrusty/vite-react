@@ -165,12 +165,29 @@ export default function ResumeBuilder() {
     }
   };
 
-  const readFileContent = (file: File): Promise<string> => {
+  const readFileContent = async (file: File): Promise<string> => {
+    console.log(`[FRONTEND] Processing file: ${file.name} (${file.type})`);
+    
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = reject;
-      reader.readAsText(file);
+      
+      reader.onload = function(event) {
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          console.log(`[FRONTEND] File processed successfully, size: ${result.length}`);
+          resolve(result);
+        } else {
+          reject(new Error('FileReader returned unexpected result type'));
+        }
+      };
+      
+      reader.onerror = function() {
+        console.error('[FRONTEND] File reading failed');
+        reject(new Error('Failed to read file'));
+      };
+      
+      // Use readAsDataURL for all file types - this is the standard, supported method
+      reader.readAsDataURL(file);
     });
   };
 
@@ -292,6 +309,50 @@ export default function ResumeBuilder() {
         },
       ],
     });
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      
+      // Validate file type using the same logic as handleFileUpload
+      if (!Object.keys(FILE_CONFIG.ALLOWED_TYPES).includes(file.type)) {
+        showNotification('error', 'Please upload a PDF, DOCX, or TXT file');
+        return;
+      }
+
+      // Validate file size
+      if (file.size > FILE_CONFIG.MAX_SIZE) {
+        showNotification('error', 'File size must be less than 10MB');
+        return;
+      }
+
+      // Create a synthetic event to reuse the existing handleFileUpload logic
+      const syntheticEvent = {
+        target: { files: [file] }
+      } as React.ChangeEvent<HTMLInputElement>;
+      
+      handleFileUpload(syntheticEvent);
+    }
   };
 
   return (
@@ -516,7 +577,13 @@ export default function ResumeBuilder() {
               </div>
 
               <div className="max-w-md mx-auto">
-                <div className="border-2 border-dashed border-[#4a90a4] border-opacity-30 rounded-lg p-8 text-center hover:border-opacity-50 transition-colors">
+                <div 
+                  className="border-2 border-dashed border-[#4a90a4] border-opacity-30 rounded-lg p-8 text-center hover:border-opacity-50 transition-colors"
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   <input
                     type="file"
                     accept=".pdf,.docx,.txt"
