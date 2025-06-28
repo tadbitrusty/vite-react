@@ -148,29 +148,19 @@ function ResumeVita() {
   const readFileContent = async (file: File): Promise<string> => {
     console.log(`[FRONTEND] Preparing file for Claude: ${file.name} (${file.type})`);
     
-    // For PDFs, send raw binary data to backend for image conversion
-    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const binaryString = reader.result as string;
-          console.log(`[FRONTEND] PDF converted to binary, size: ${binaryString.length}`);
-          resolve(binaryString);
-        };
-        reader.onerror = reject;
-        reader.readAsBinaryString(file);
-      });
-    }
-    
-    // For other formats, convert to base64 for Claude API
+    // For all files, convert to base64 with data URL for backend processing
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const base64 = reader.result as string;
-        console.log(`[FRONTEND] File converted to base64, size: ${base64.length}`);
-        resolve(base64);
+        const dataUrl = reader.result as string;
+        console.log(`[FRONTEND] File converted to data URL, size: ${dataUrl.length}`);
+        console.log(`[FRONTEND] Data URL preview: ${dataUrl.substring(0, 100)}...`);
+        resolve(dataUrl);
       };
-      reader.onerror = reject;
+      reader.onerror = (error) => {
+        console.error('[FRONTEND] File reading error:', error);
+        reject(error);
+      };
       reader.readAsDataURL(file);
     });
   };

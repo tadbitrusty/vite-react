@@ -68,7 +68,7 @@ function truncateContent(content: string, maxLength: number): string {
 }
 
 // Process PDF directly with Claude Vision (SERVERLESS COMPATIBLE)
-async function processPDFWithClaudeVision(pdfBuffer: Buffer, jobDescription: string, template: string) {
+async function processPDFWithClaudeVision(pdfBuffer: Buffer, jobDescription: string, template: string, pdfBase64?: string) {
   const templateInfo = getTemplatePromptEnhancements(template);
   
   console.log(`[CLAUDE_VISION_PDF] Processing PDF directly with Claude Vision`);
@@ -135,8 +135,8 @@ Return ONLY the clean, final resume content with no instructional text:`;
 
   if (!anthropic) throw new Error('Anthropic client not initialized');
 
-  // Convert PDF to base64 for Claude Vision
-  const base64PDF = pdfBuffer.toString('base64');
+  // Use provided base64 or convert buffer to base64 for Claude Vision
+  const base64PDF = pdfBase64 || pdfBuffer.toString('base64');
   
   // Build content array with text and PDF
   const content: any[] = [
@@ -470,22 +470,25 @@ export async function POST(request: NextRequest) {
     let claudeProcessor: 'pdf_vision' | 'text' = 'text';
     let extractedText: string = resumeContent;
     let pdfBuffer: Buffer | null = null;
+    let pdfBase64: string | null = null;
     
-    if (resumeContent.startsWith('%PDF-')) {
-      console.log('[PROCESS_RESUME] Received raw PDF data - using direct Claude Vision for 100% data capture...');
+    // Handle data URL format (data:application/pdf;base64,...)
+    if (resumeContent.startsWith('data:application/pdf;base64,')) {
+      console.log('[PROCESS_RESUME] Received PDF data URL - using direct Claude Vision for 100% data capture...');
       try {
-        // Prepare PDF for Claude Vision
-        pdfBuffer = Buffer.from(resumeContent, 'binary');
+        // Extract base64 from data URL
+        pdfBase64 = resumeContent.split(',')[1];
+        pdfBuffer = Buffer.from(pdfBase64, 'base64');
         claudeProcessor = 'pdf_vision';
         
-        console.log(`[PROCESS_RESUME] PDF prepared for direct Claude Vision processing`);
+        console.log(`[PROCESS_RESUME] PDF prepared for direct Claude Vision processing (size: ${pdfBuffer.length} bytes)`);
         
       } catch (error) {
-        console.error('[PROCESS_RESUME] PDF preparation failed, falling back to text extraction:', error);
+        console.error('[PROCESS_RESUME] PDF data URL processing failed, falling back to text extraction:', error);
         // Fallback to text extraction if PDF preparation fails
         try {
           const pdfParse = (await import('pdf-parse')).default;
-          const pdfData = await pdfParse(Buffer.from(resumeContent, 'binary'));
+          const pdfData = await pdfParse(Buffer.from(pdfBase64 || '', 'base64'));
           extractedText = pdfData.text;
           claudeProcessor = 'text';
           console.log(`[PROCESS_RESUME] Fallback text extraction: ${extractedText.length} characters`);
@@ -497,6 +500,33 @@ export async function POST(request: NextRequest) {
             error_type: 'PDF_PROCESSING_FAILED'
           }, { status: 400 });
         }
+      }
+    }
+    // Handle raw PDF binary (legacy)
+    else if (resumeContent.startsWith('%PDF-')) {
+      console.log('[PROCESS_RESUME] Received raw PDF binary - converting to buffer...');
+      try {
+        pdfBuffer = Buffer.from(resumeContent, 'binary');
+        claudeProcessor = 'pdf_vision';
+        console.log(`[PROCESS_RESUME] Raw PDF converted to buffer (size: ${pdfBuffer.length} bytes)`);
+      } catch (error) {
+        console.error('[PROCESS_RESUME] Raw PDF processing failed:', error);
+        claudeProcessor = 'text';
+        extractedText = resumeContent;
+      }
+    }
+    // Handle other data URL formats (DOCX, TXT, etc.)
+    else if (resumeContent.startsWith('data:')) {
+      console.log('[PROCESS_RESUME] Received non-PDF data URL - extracting text...');
+      try {
+        const base64Content = resumeContent.split(',')[1];
+        const textContent = Buffer.from(base64Content, 'base64').toString('utf-8');
+        extractedText = textContent;
+        claudeProcessor = 'text';
+        console.log(`[PROCESS_RESUME] Text extracted from data URL: ${extractedText.length} characters`);
+      } catch (error) {
+        console.error('[PROCESS_RESUME] Data URL text extraction failed:', error);
+        extractedText = resumeContent; // Use as-is
       }
     }
 
@@ -553,7 +583,7 @@ export async function POST(request: NextRequest) {
       try {
         // Process with Claude PDF Vision or text extraction
         const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBuffer
-          ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template)
+          ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template, pdfBase64 || undefined)
           : await processResumeWithClaude(extractedText, jobDescription, template);
         
         // Send email with PDF
@@ -598,7 +628,7 @@ export async function POST(request: NextRequest) {
       try {
         // Process with Claude PDF Vision or text extraction
         const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBuffer
-          ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template)
+          ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template, pdfBase64 || undefined)
           : await processResumeWithClaude(extractedText, jobDescription, template);
         
         // Send email with PDF
