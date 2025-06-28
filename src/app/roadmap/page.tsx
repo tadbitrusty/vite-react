@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Target, CheckCircle, Clock, Calendar, Zap, Users, Globe, Brain, Shield, BarChart3, Smartphone, MessageSquare, FileText, Download, Search, Star, Rocket } from 'lucide-react';
+import { Target, CheckCircle, Clock, Calendar, Zap, Users, Globe, Brain, Shield, BarChart3, Smartphone, MessageSquare, FileText, Download, Search, Star, Rocket, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
 interface RoadmapItem {
