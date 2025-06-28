@@ -105,8 +105,9 @@ export async function uploadResumeFile(
       buffer = Buffer.from(fileContent, 'binary');
     }
     
-    // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // Upload to Supabase Storage using admin client
+    const adminClient = getAdminClient();
+    const { data: uploadData, error: uploadError } = await adminClient.storage
       .from('resume-files')
       .upload(filePath, buffer, {
         contentType: file.type,
@@ -121,8 +122,7 @@ export async function uploadResumeFile(
     
     console.log(`[STORAGE] File uploaded successfully: ${uploadData.path}`);
     
-    // Create database record using admin client to bypass RLS
-    const adminClient = getAdminClient();
+    // Create database record using same admin client to bypass RLS
     const { data: fileRecord, error: dbError } = await adminClient
       .from('resume_files')
       .insert({
