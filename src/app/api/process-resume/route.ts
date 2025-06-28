@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { Resend } from 'resend';
 import jsPDF from 'jspdf';
+import { 
+  uploadResumeFile, 
+  createProcessingJob, 
+  updateProcessingJobStatus, 
+  storeIntelligenceData,
+  uploadGeneratedPDF 
+} from '@/lib/storage';
 
 // Initialize services (conditionally for build safety)
 let anthropic: Anthropic | null = null;
@@ -249,6 +256,149 @@ Return ONLY the clean, final resume content with no instructional text:`;
   return cleanResumeOutput(rawContent);
 }
 
+// Extract market intelligence data from resume content
+function extractIntelligenceData(resumeContent: string, jobDescription: string): {
+  extracted_skills: string[];
+  job_titles: string[];
+  companies: string[];
+  technologies: string[];
+  keywords: string[];
+  experience_years?: number;
+  education_level?: string;
+  industry_sectors: string[];
+  job_description_keywords: string[];
+} {
+  console.log('[INTELLIGENCE] Extracting market data from resume content...');
+  
+  const lines = resumeContent.split('\n');
+  const skills: Set<string> = new Set();
+  const jobTitles: Set<string> = new Set();
+  const companies: Set<string> = new Set();
+  const technologies: Set<string> = new Set();
+  const keywords: Set<string> = new Set();
+  const industrySectors: Set<string> = new Set();
+  const jobDescKeywords: Set<string> = new Set();
+  
+  let educationLevel = '';
+  let experienceYears = 0;
+  
+  // Extract skills from SKILLS section
+  let inSkillsSection = false;
+  let inExperienceSection = false;
+  
+  for (const line of lines) {
+    const cleanLine = line.trim();
+    
+    if (cleanLine.includes('SKILLS:')) {
+      inSkillsSection = true;
+      inExperienceSection = false;
+      continue;
+    } else if (cleanLine.includes('EXPERIENCE:')) {
+      inExperienceSection = true;
+      inSkillsSection = false;
+      continue;
+    } else if (cleanLine.includes('EDUCATION:') || cleanLine.includes('CERTIFICATIONS:')) {
+      inSkillsSection = false;
+      inExperienceSection = false;
+      
+      // Extract education level
+      if (cleanLine.includes('Bachelor') || cleanLine.includes("Bachelor's")) educationLevel = 'Bachelor';
+      else if (cleanLine.includes('Master') || cleanLine.includes("Master's")) educationLevel = 'Master';
+      else if (cleanLine.includes('PhD') || cleanLine.includes('Doctorate')) educationLevel = 'PhD';
+      else if (cleanLine.includes('Associate')) educationLevel = 'Associate';
+      continue;
+    }
+    
+    if (inSkillsSection && cleanLine) {
+      // Parse skills - look for common patterns
+      const skillPatterns = cleanLine.split(/[,;•·]/).map(s => s.trim()).filter(s => s.length > 2);
+      skillPatterns.forEach(skill => {
+        skills.add(skill);
+        keywords.add(skill.toLowerCase());
+        
+        // Categorize as technology if it matches common tech patterns
+        if (skill.match(/^[A-Z][a-z]*(?:\.[a-z]+)*$/) || // JavaScript, Node.js
+            skill.match(/^[A-Z]+$/) || // SQL, AWS, API
+            skill.toLowerCase().includes('script') ||
+            skill.toLowerCase().includes('framework') ||
+            skill.toLowerCase().includes('database')) {
+          technologies.add(skill);
+        }
+      });
+    }
+    
+    if (inExperienceSection && cleanLine) {
+      // Extract job titles and companies
+      if (cleanLine.includes(' - ') && !cleanLine.startsWith('•')) {
+        const parts = cleanLine.split(' - ');
+        if (parts.length >= 2) {
+          jobTitles.add(parts[0].trim());
+          companies.add(parts[1].trim());
+        }
+      }
+      
+      // Extract date ranges to calculate experience
+      const dateMatch = cleanLine.match(/(\d{4})\s*-?\s*(\d{4}|Present|Current)/i);
+      if (dateMatch) {
+        const startYear = parseInt(dateMatch[1]);
+        const endYear = dateMatch[2].toLowerCase().includes('present') || 
+                       dateMatch[2].toLowerCase().includes('current') ? 
+                       new Date().getFullYear() : parseInt(dateMatch[2]);
+        if (!isNaN(startYear) && !isNaN(endYear)) {
+          experienceYears += (endYear - startYear);
+        }
+      }
+    }
+    
+    // Extract all meaningful words as keywords
+    const words = cleanLine.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
+    words.forEach(word => {
+      if (!['the', 'and', 'for', 'with', 'this', 'that', 'from', 'they', 'were', 'been', 'have', 'will'].includes(word)) {
+        keywords.add(word);
+      }
+    });
+  }
+  
+  // Extract keywords from job description
+  const jobWords = jobDescription.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
+  jobWords.forEach(word => {
+    if (!['the', 'and', 'for', 'with', 'this', 'that', 'from', 'they', 'were', 'been', 'have', 'will'].includes(word)) {
+      jobDescKeywords.add(word);
+    }
+  });
+  
+  // Industry classification based on keywords
+  const industryKeywords = {
+    'technology': ['software', 'developer', 'engineer', 'programming', 'code', 'system', 'technical'],
+    'finance': ['financial', 'banking', 'investment', 'accounting', 'trading', 'analyst'],
+    'healthcare': ['medical', 'health', 'hospital', 'clinical', 'patient', 'care'],
+    'marketing': ['marketing', 'brand', 'campaign', 'social', 'content', 'advertising'],
+    'sales': ['sales', 'revenue', 'client', 'customer', 'business', 'relationship'],
+    'operations': ['operations', 'logistics', 'supply', 'process', 'efficiency', 'management']
+  };
+  
+  Object.entries(industryKeywords).forEach(([industry, keywordList]) => {
+    if (keywordList.some(keyword => Array.from(keywords).includes(keyword))) {
+      industrySectors.add(industry);
+    }
+  });
+  
+  const result = {
+    extracted_skills: Array.from(skills).slice(0, 50), // Limit for storage
+    job_titles: Array.from(jobTitles),
+    companies: Array.from(companies),
+    technologies: Array.from(technologies).slice(0, 30),
+    keywords: Array.from(keywords).slice(0, 100),
+    experience_years: experienceYears > 0 ? experienceYears : undefined,
+    education_level: educationLevel || undefined,
+    industry_sectors: Array.from(industrySectors),
+    job_description_keywords: Array.from(jobDescKeywords).slice(0, 50)
+  };
+  
+  console.log(`[INTELLIGENCE] Extracted: ${result.extracted_skills.length} skills, ${result.job_titles.length} job titles, ${result.companies.length} companies`);
+  return result;
+}
+
 // Clean up Claude output to ensure professional final PDF
 function cleanResumeOutput(content: string): string {
   let cleaned = content;
@@ -463,37 +613,90 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[PROCESS_RESUME] File data size: ${resumeContent.length} characters`);
-    console.log(`[PROCESS_RESUME] File data preview (first 100 chars): ${resumeContent.substring(0, 100)}`);
+    console.log(`[STORAGE_PIPELINE] Starting complete data collection pipeline for ${email}`);
+    console.log(`[STORAGE_PIPELINE] File: ${fileName}, Template: ${template}`);
     
-    // SERVERLESS PDF PROCESSING: Direct Claude Vision (100% data capture)
+    // STEP 1: Upload original file to Supabase Storage
+    const fileObj = {
+      name: fileName,
+      type: resumeContent.startsWith('data:application/pdf') ? 'application/pdf' : 'text/plain',
+      size: resumeContent.length
+    } as File;
+    
+    const uploadResult = await uploadResumeFile(fileObj, email, resumeContent);
+    if (!uploadResult.success || !uploadResult.fileRecord) {
+      console.error('[STORAGE_PIPELINE] File upload failed:', uploadResult.error);
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to store resume file',
+        error: uploadResult.error
+      }, { status: 500 });
+    }
+    
+    console.log(`[STORAGE_PIPELINE] File uploaded successfully: ${uploadResult.fileRecord.id}`);
+    
+    // STEP 2: Create processing job record
+    const templateNames = {
+      'ats-optimized': 'ATS Optimized',
+      'entry-clean': 'Premium Classic',
+      'tech-focus': 'Tech Focus',
+      'professional-plus': 'Premium Plus',
+      'executive-format': 'Executive Format'
+    };
+    
+    const templateName = templateNames[template as keyof typeof templateNames] || 'ATS Optimized';
+    
+    const jobResult = await createProcessingJob(
+      uploadResult.fileRecord.id,
+      email,
+      jobDescription,
+      template,
+      templateName
+    );
+    
+    if (!jobResult.success || !jobResult.jobId) {
+      console.error('[STORAGE_PIPELINE] Processing job creation failed:', jobResult.error);
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to create processing job',
+        error: jobResult.error
+      }, { status: 500 });
+    }
+    
+    console.log(`[STORAGE_PIPELINE] Processing job created: ${jobResult.jobId}`);
+    
+    // STEP 3: Process file content for Claude
     let claudeProcessor: 'pdf_vision' | 'text' = 'text';
     let extractedText: string = resumeContent;
     let pdfBuffer: Buffer | null = null;
     let pdfBase64: string | null = null;
     
+    // Update job status to processing
+    await updateProcessingJobStatus(jobResult.jobId, 'processing');
+    
     // Handle data URL format (data:application/pdf;base64,...)
     if (resumeContent.startsWith('data:application/pdf;base64,')) {
-      console.log('[PROCESS_RESUME] Received PDF data URL - using direct Claude Vision for 100% data capture...');
+      console.log('[STORAGE_PIPELINE] Processing PDF with Claude Vision for 100% data capture...');
       try {
         // Extract base64 from data URL
         pdfBase64 = resumeContent.split(',')[1];
         pdfBuffer = Buffer.from(pdfBase64, 'base64');
         claudeProcessor = 'pdf_vision';
         
-        console.log(`[PROCESS_RESUME] PDF prepared for direct Claude Vision processing (size: ${pdfBuffer.length} bytes)`);
+        console.log(`[STORAGE_PIPELINE] PDF prepared for Claude Vision (size: ${pdfBuffer.length} bytes)`);
         
       } catch (error) {
-        console.error('[PROCESS_RESUME] PDF data URL processing failed, falling back to text extraction:', error);
-        // Fallback to text extraction if PDF preparation fails
+        console.error('[STORAGE_PIPELINE] PDF processing failed, falling back to text extraction:', error);
+        // Fallback to text extraction
         try {
           const pdfParse = (await import('pdf-parse')).default;
           const pdfData = await pdfParse(Buffer.from(pdfBase64 || '', 'base64'));
           extractedText = pdfData.text;
           claudeProcessor = 'text';
-          console.log(`[PROCESS_RESUME] Fallback text extraction: ${extractedText.length} characters`);
+          console.log(`[STORAGE_PIPELINE] Fallback text extraction: ${extractedText.length} characters`);
         } catch (textError) {
-          console.error('[PROCESS_RESUME] Both PDF and text extraction failed:', textError);
+          console.error('[STORAGE_PIPELINE] Both PDF and text extraction failed:', textError);
+          await updateProcessingJobStatus(jobResult.jobId, 'failed', 'PDF processing failed');
           return NextResponse.json({
             success: false,
             message: 'Failed to process PDF file. Please try uploading a different format.',
@@ -502,30 +705,17 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-    // Handle raw PDF binary (legacy)
-    else if (resumeContent.startsWith('%PDF-')) {
-      console.log('[PROCESS_RESUME] Received raw PDF binary - converting to buffer...');
-      try {
-        pdfBuffer = Buffer.from(resumeContent, 'binary');
-        claudeProcessor = 'pdf_vision';
-        console.log(`[PROCESS_RESUME] Raw PDF converted to buffer (size: ${pdfBuffer.length} bytes)`);
-      } catch (error) {
-        console.error('[PROCESS_RESUME] Raw PDF processing failed:', error);
-        claudeProcessor = 'text';
-        extractedText = resumeContent;
-      }
-    }
     // Handle other data URL formats (DOCX, TXT, etc.)
     else if (resumeContent.startsWith('data:')) {
-      console.log('[PROCESS_RESUME] Received non-PDF data URL - extracting text...');
+      console.log('[STORAGE_PIPELINE] Processing non-PDF file...');
       try {
         const base64Content = resumeContent.split(',')[1];
         const textContent = Buffer.from(base64Content, 'base64').toString('utf-8');
         extractedText = textContent;
         claudeProcessor = 'text';
-        console.log(`[PROCESS_RESUME] Text extracted from data URL: ${extractedText.length} characters`);
+        console.log(`[STORAGE_PIPELINE] Text extracted: ${extractedText.length} characters`);
       } catch (error) {
-        console.error('[PROCESS_RESUME] Data URL text extraction failed:', error);
+        console.error('[STORAGE_PIPELINE] Text extraction failed:', error);
         extractedText = resumeContent; // Use as-is
       }
     }
@@ -569,6 +759,7 @@ export async function POST(request: NextRequest) {
     // Check if user can use free service or if they have special privileges
     if (template === 'ats-optimized') {
       if (!eligibility.canUseFree) {
+        await updateProcessingJobStatus(jobResult.jobId, 'failed', 'User not eligible for free service');
         return NextResponse.json({
           success: false,
           message: eligibility.reason || 'Free resume limit reached',
@@ -581,13 +772,45 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // Process with Claude PDF Vision or text extraction
+        // STEP 4: Process with Claude PDF Vision or text extraction
+        console.log(`[STORAGE_PIPELINE] Processing with Claude ${claudeProcessor}...`);
         const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBuffer
           ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template, pdfBase64 || undefined)
           : await processResumeWithClaude(extractedText, jobDescription, template);
         
-        // Send email with PDF
+        // STEP 5: Extract market intelligence data
+        console.log(`[STORAGE_PIPELINE] Extracting market intelligence data...`);
+        const intelligenceData = extractIntelligenceData(claudeResponse, jobDescription);
+        
+        // STEP 6: Generate and store PDF
+        console.log(`[STORAGE_PIPELINE] Generating and storing PDF...`);
+        const pdfBuffer = generateActualPDF(claudeResponse, template);
+        const pdfUploadResult = await uploadGeneratedPDF(pdfBuffer, fileName, email);
+        
+        // STEP 7: Store complete intelligence data in database
+        const intelligenceResult = await storeIntelligenceData(jobResult.jobId, email, {
+          original_text: extractedText,
+          optimized_resume_text: claudeResponse,
+          optimized_pdf_path: pdfUploadResult.filePath || undefined,
+          ...intelligenceData
+        });
+        
+        if (!intelligenceResult.success) {
+          console.warn('[STORAGE_PIPELINE] Intelligence data storage failed:', intelligenceResult.error);
+        }
+        
+        // STEP 8: Send email with PDF
+        console.log(`[STORAGE_PIPELINE] Sending email notification...`);
         await sendResumeEmail(email, claudeResponse, template, fileName);
+
+        // STEP 9: Mark processing job as completed
+        await updateProcessingJobStatus(jobResult.jobId, 'completed', undefined, {
+          claude_processor: claudeProcessor,
+          intelligence_extracted: intelligenceResult.success,
+          pdf_generated: pdfUploadResult.success,
+          total_keywords: intelligenceData.keywords.length,
+          skills_count: intelligenceData.extracted_skills.length
+        });
 
         // Record usage in tracking system
         await fetch(`${baseUrl}/api/user-tracking`, {
@@ -603,6 +826,8 @@ export async function POST(request: NextRequest) {
           })
         });
 
+        console.log(`[STORAGE_PIPELINE] Complete pipeline finished successfully for ${email}`);
+        
         return NextResponse.json({
           success: true,
           message: 'Resume processed and sent via email successfully!',
@@ -611,11 +836,14 @@ export async function POST(request: NextRequest) {
             freeResumesUsed: session.freeResumesUsed + 1,
             whitelistStatus: session.whitelistStatus
           },
+          processing_job_id: jobResult.jobId,
+          intelligence_data: intelligenceResult.success,
           timestamp: new Date().toISOString()
         });
 
       } catch (error) {
-        console.error('Error processing resume:', error);
+        console.error('[STORAGE_PIPELINE] Error processing free template:', error);
+        await updateProcessingJobStatus(jobResult.jobId, 'failed', error instanceof Error ? error.message : 'Unknown error');
         return NextResponse.json(
           { success: false, message: 'Failed to process resume. Please try again.' },
           { status: 500 }
@@ -623,16 +851,49 @@ export async function POST(request: NextRequest) {
       }
     } else if (isPostPayment || eligibility.canUseFree || eligibility.privilegeLevel?.premium_access) {
       // Premium templates - process if payment verified, user has free eligibility, or premium access privilege
-      console.log(`[PROCESS_RESUME] Processing premium template for ${email} - Post-payment: ${isPostPayment}`);
+      console.log(`[STORAGE_PIPELINE] Processing premium template for ${email} - Post-payment: ${isPostPayment}`);
       
       try {
-        // Process with Claude PDF Vision or text extraction
+        // STEP 4: Process with Claude PDF Vision or text extraction
+        console.log(`[STORAGE_PIPELINE] Processing with Claude ${claudeProcessor}...`);
         const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBuffer
           ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template, pdfBase64 || undefined)
           : await processResumeWithClaude(extractedText, jobDescription, template);
         
-        // Send email with PDF
+        // STEP 5: Extract market intelligence data
+        console.log(`[STORAGE_PIPELINE] Extracting market intelligence data...`);
+        const intelligenceData = extractIntelligenceData(claudeResponse, jobDescription);
+        
+        // STEP 6: Generate and store PDF
+        console.log(`[STORAGE_PIPELINE] Generating and storing PDF...`);
+        const pdfBuffer = generateActualPDF(claudeResponse, template);
+        const pdfUploadResult = await uploadGeneratedPDF(pdfBuffer, fileName, email);
+        
+        // STEP 7: Store complete intelligence data in database
+        const intelligenceResult = await storeIntelligenceData(jobResult.jobId, email, {
+          original_text: extractedText,
+          optimized_resume_text: claudeResponse,
+          optimized_pdf_path: pdfUploadResult.filePath || undefined,
+          ...intelligenceData
+        });
+        
+        if (!intelligenceResult.success) {
+          console.warn('[STORAGE_PIPELINE] Intelligence data storage failed:', intelligenceResult.error);
+        }
+        
+        // STEP 8: Send email with PDF
+        console.log(`[STORAGE_PIPELINE] Sending email notification...`);
         await sendResumeEmail(email, claudeResponse, template, fileName);
+
+        // STEP 9: Mark processing job as completed
+        await updateProcessingJobStatus(jobResult.jobId, 'completed', undefined, {
+          claude_processor: claudeProcessor,
+          intelligence_extracted: intelligenceResult.success,
+          pdf_generated: pdfUploadResult.success,
+          total_keywords: intelligenceData.keywords.length,
+          skills_count: intelligenceData.extracted_skills.length,
+          premium_template: true
+        });
 
         // Record usage in tracking system (don't increment for post-payment)
         if (!isPostPayment) {
@@ -661,7 +922,7 @@ export async function POST(request: NextRequest) {
                             eligibility.privilegeLevel?.premium_access ? 'Premium access privilege' :
                             eligibility.canUseFree ? 'Free eligibility' : 'Unknown';
         
-        console.log(`[PROCESS_RESUME] Premium resume generated successfully for ${email} - ${templateInfo} (${accessReason})`);
+        console.log(`[STORAGE_PIPELINE] Premium template pipeline completed for ${email} - ${templateInfo} (${accessReason})`);
 
         return NextResponse.json({
           success: true,
