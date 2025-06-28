@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * PaymentSuccess Component
  * Displays success message after payment and provides next steps
