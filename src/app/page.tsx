@@ -117,89 +117,29 @@ export default function Home() {
   };
 
   const readFileContent = async (file: File): Promise<string> => {
-    console.log(`[FRONTEND] Preparing file for Claude: ${file.name} (${file.type})`);
+    console.log(`[FRONTEND] Processing file: ${file.name} (${file.type})`);
     
-    // Use ArrayBuffer for PDFs to prevent corruption, DataURL for text files
-    if (file.type === 'application/pdf') {
-      console.log(`[FRONTEND] Processing PDF with ArrayBuffer to prevent corruption`);
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const arrayBuffer = reader.result as ArrayBuffer;
-            
-            // For large files, use chunked processing to avoid memory issues
-            if (arrayBuffer.byteLength > 5 * 1024 * 1024) { // 5MB threshold
-              console.log(`[FRONTEND] Large PDF detected (${arrayBuffer.byteLength} bytes), using chunked processing`);
-            }
-            
-            const uint8Array = new Uint8Array(arrayBuffer);
-            
-            // Convert to base64 using safer method
-            let pdfBase64 = '';
-            try {
-              // Use a safer chunked approach for all files to avoid stack overflow
-              const chunkSize = 8192;
-              for (let pos = 0; pos < uint8Array.length; pos += chunkSize) {
-                const chunk = uint8Array.subarray(pos, pos + chunkSize);
-                let chunkString = '';
-                for (let j = 0; j < chunk.length; j++) {
-                  chunkString += String.fromCharCode(chunk[j]);
-                }
-                pdfBase64 += btoa(chunkString);
-              }
-            } catch (error) {
-              console.warn('[FRONTEND] ArrayBuffer method failed, falling back to DataURL:', error);
-              // Fallback to original method if ArrayBuffer conversion fails
-              const fallbackReader = new FileReader();
-              fallbackReader.onload = () => {
-                const dataUrl = fallbackReader.result as string;
-                console.log(`[FRONTEND] PDF fallback conversion successful, size: ${dataUrl.length}`);
-                resolve(dataUrl);
-              };
-              fallbackReader.onerror = reject;
-              fallbackReader.readAsDataURL(file);
-              return;
-            }
-            
-            const dataUrl = `data:application/pdf;base64,${pdfBase64}`;
-            console.log(`[FRONTEND] PDF converted via ArrayBuffer, size: ${dataUrl.length}`);
-            console.log(`[FRONTEND] PDF base64 preview: ${pdfBase64.substring(0, 50)}...`);
-            
-            // Validate the base64 is properly formatted
-            if (pdfBase64.length < 100 || !/^[A-Za-z0-9+/]*={0,2}$/.test(pdfBase64.substring(0, 100))) {
-              throw new Error('Generated base64 appears invalid');
-            }
-            
-            resolve(dataUrl);
-          } catch (error) {
-            console.error('[FRONTEND] PDF ArrayBuffer processing failed:', error);
-            reject(error);
-          }
-        };
-        reader.onerror = (error) => {
-          console.error('[FRONTEND] PDF reading error:', error);
-          reject(error);
-        };
-        reader.readAsArrayBuffer(file);
-      });
-    } else {
-      // For text files, use data URL method
-      console.log(`[FRONTEND] Processing text file with DataURL method`);
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          console.log(`[FRONTEND] Text file converted to data URL, size: ${dataUrl.length}`);
-          resolve(dataUrl);
-        };
-        reader.onerror = (error) => {
-          console.error('[FRONTEND] File reading error:', error);
-          reject(error);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = function(event) {
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          console.log(`[FRONTEND] File processed successfully, size: ${result.length}`);
+          resolve(result);
+        } else {
+          reject(new Error('FileReader returned unexpected result type'));
+        }
+      };
+      
+      reader.onerror = function() {
+        console.error('[FRONTEND] File reading failed');
+        reject(new Error('Failed to read file'));
+      };
+      
+      // Use readAsDataURL for all file types - this is the standard, supported method
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

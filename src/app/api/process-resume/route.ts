@@ -75,7 +75,7 @@ function truncateContent(content: string, maxLength: number): string {
 }
 
 // Process PDF directly with Claude Vision (SERVERLESS COMPATIBLE)
-async function processPDFWithClaudeVision(pdfBuffer: Buffer, jobDescription: string, template: string, pdfBase64?: string) {
+async function processPDFWithClaudeVision(pdfBase64: string, jobDescription: string, template: string) {
   const templateInfo = getTemplatePromptEnhancements(template);
   
   console.log(`[CLAUDE_VISION_PDF] Processing PDF directly with Claude Vision`);
@@ -142,8 +142,8 @@ Return ONLY the clean, final resume content with no instructional text:`;
 
   if (!anthropic) throw new Error('Anthropic client not initialized');
 
-  // Use provided base64 or convert buffer to base64 for Claude Vision
-  const base64PDF = pdfBase64 || pdfBuffer.toString('base64');
+  // Use the provided base64 string directly
+  const base64PDF = pdfBase64;
   
   // Build content array with text and PDF
   const content: any[] = [
@@ -793,8 +793,8 @@ export async function POST(request: NextRequest) {
       try {
         // STEP 4: Process with Claude PDF Vision or text extraction
         console.log(`[STORAGE_PIPELINE] Processing with Claude ${claudeProcessor}...`);
-        const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBuffer
-          ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template, pdfBase64 || undefined)
+        const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBase64
+          ? await processPDFWithClaudeVision(pdfBase64, jobDescription, template)
           : await processResumeWithClaude(extractedText, jobDescription, template);
         
         // STEP 5: Extract market intelligence data
@@ -894,8 +894,8 @@ export async function POST(request: NextRequest) {
       try {
         // STEP 4: Process with Claude PDF Vision or text extraction
         console.log(`[STORAGE_PIPELINE] Processing with Claude ${claudeProcessor}...`);
-        const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBuffer
-          ? await processPDFWithClaudeVision(pdfBuffer, jobDescription, template, pdfBase64 || undefined)
+        const claudeResponse = claudeProcessor === 'pdf_vision' && pdfBase64
+          ? await processPDFWithClaudeVision(pdfBase64, jobDescription, template)
           : await processResumeWithClaude(extractedText, jobDescription, template);
         
         // STEP 5: Extract market intelligence data
