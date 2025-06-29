@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, Mail, Download, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Mail, Download, ArrowLeft, Target, Zap } from 'lucide-react';
 
 interface PaymentSuccessProps {
   sessionId?: string;
@@ -14,6 +14,7 @@ interface PaymentSuccessProps {
 
 export function PaymentSuccess({ sessionId }: PaymentSuccessProps) {
   const [countdown, setCountdown] = useState(5);
+  const [wantsOptimization, setWantsOptimization] = useState(false);
 
   useEffect(() => {
     // Countdown to redirect back to main page
@@ -118,6 +119,57 @@ export function PaymentSuccess({ sessionId }: PaymentSuccessProps) {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ATS Optimization Upsell */}
+        <div className="bg-gradient-to-r from-[#4a90a4] to-[#5ba0b5] bg-opacity-10 rounded-lg p-6 border border-[#4a90a4] border-opacity-30 mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <Target className="w-6 h-6 text-[#4a90a4] mr-3" />
+            <h3 className="text-white text-xl font-semibold" style={{ fontFamily: 'Inter, sans-serif' }}>
+              Want Even Better Results?
+            </h3>
+          </div>
+          
+          <p className="text-gray-300 text-center mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+            Your template is great, but optimizing it for a specific job posting increases your interview chances by <span className="text-[#4a90a4] font-semibold">67%</span>
+          </p>
+          
+          <div className="flex items-center justify-center mb-6">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={wantsOptimization}
+                onChange={(e) => setWantsOptimization(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-colors ${
+                wantsOptimization 
+                  ? 'bg-[#4a90a4] border-[#4a90a4]' 
+                  : 'border-gray-400'
+              }`}>
+                {wantsOptimization && <CheckCircle className="w-3 h-3 text-white" />}
+              </div>
+              <span className="text-white" style={{ fontFamily: 'Inter, sans-serif' }}>
+                Yes, I want to optimize this resume for a specific job posting
+              </span>
+            </label>
+          </div>
+          
+          {wantsOptimization && (
+            <div className="text-center">
+              <button
+                onClick={() => window.location.href = '/builder'}
+                className="bg-gradient-to-r from-[#4a90a4] to-[#5ba0b5] text-white font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center space-x-2 mx-auto"
+                style={{ fontFamily: 'Inter, sans-serif' }}
+              >
+                <Zap className="w-5 h-5" />
+                <span>Optimize My Resume Now</span>
+              </button>
+              <p className="text-gray-400 text-xs mt-2" style={{ fontFamily: 'Inter, sans-serif' }}>
+                Upload your new template and a job posting for ATS optimization
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Session Info */}

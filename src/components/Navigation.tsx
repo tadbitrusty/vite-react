@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Target, Menu, X, Home, FileText, Heart, MapPin, Mail, Settings } from 'lucide-react';
+import { Target, Menu, X, Home, FileText, Heart, MapPin, Mail, Settings, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -66,6 +66,12 @@ export default function Navigation({ isTransparent = false }: NavigationProps) {
       label: 'Roadmap',
       icon: <MapPin className="w-5 h-5" />,
       description: 'Future features'
+    },
+    {
+      href: '/learn',
+      label: 'Learn',
+      icon: <BookOpen className="w-5 h-5" />,
+      description: 'Resume help & guides'
     },
     {
       href: '/contact',
