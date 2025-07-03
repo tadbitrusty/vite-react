@@ -190,6 +190,13 @@ export default function AdminDashboard() {
           </div>
           
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => router.push('/admin/marketing')}
+              className="flex items-center space-x-2 bg-gradient-to-r from-[#4a90a4] to-[#5ba0b5] text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span style={{ fontFamily: 'Inter, sans-serif' }}>Marketing</span>
+            </button>
             <span className="text-gray-300 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
               Welcome, tadbitrusty
             </span>
