@@ -232,9 +232,19 @@ export default function Navigation({ isTransparent = false }: NavigationProps) {
                 <p className="text-gray-400 text-sm mb-2" style={{ fontFamily: 'Inter, sans-serif' }}>
                   Breathing Life Into Your Resume
                 </p>
-                <p className="text-gray-500 text-xs" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <p className="text-gray-500 text-xs mb-2" style={{ fontFamily: 'Inter, sans-serif' }}>
                   © 2024 Resume Vita. All rights reserved.
                 </p>
+                {/* Admin Access Link */}
+                <Link
+                  href="/admin/login"
+                  className="inline-flex items-center space-x-1 text-gray-600 hover:text-[#4a90a4] transition-colors text-xs"
+                  style={{ fontFamily: 'Inter, sans-serif' }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Settings className="w-3 h-3" />
+                  <span>Admin</span>
+                </Link>
               </div>
             </div>
           </div>

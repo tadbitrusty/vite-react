@@ -373,6 +373,15 @@ export default function Home() {
             <p className="text-gray-400 text-xs" style={{ fontFamily: 'Inter, sans-serif' }}>
               Files automatically deleted after 48 hours • Processing typically takes 30-60 seconds • Secure payments via Stripe
             </p>
+            <div className="mt-2 text-center">
+              <a 
+                href="/admin/login" 
+                className="text-gray-600 hover:text-[#4a90a4] transition-colors text-xs"
+                style={{ fontFamily: 'Inter, sans-serif' }}
+              >
+                Site Admin
+              </a>
+            </div>
           </div>
         </div>
 
